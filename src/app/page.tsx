@@ -1,8 +1,25 @@
+import { Suspense } from "react";
+import { CategoryTiles } from "@/components/home/CategoryTiles";
+import { HeroSlider } from "@/components/home/HeroSlider";
+import { ProductSection, ProductSectionSkeleton } from "@/components/home/ProductSection";
+import { Testimonials } from "@/components/home/Testimonials";
+import { TrustStrip } from "@/components/home/TrustStrip";
+import { productSections } from "@/lib/home";
+import { siteConfig } from "@/lib/site";
+
 export default function Home() {
   return (
-    <main className="flex min-h-screen flex-col items-center justify-center gap-4 p-8">
-      <h1 className="text-3xl font-semibold tracking-tight">The Block Bagru</h1>
-      <p className="text-zinc-600">Handcrafted block-printed sarees and suits. Coming soon.</p>
+    <main>
+      <h1 className="sr-only">{siteConfig.name}: handcrafted block-printed sarees and suits</h1>
+      <HeroSlider />
+      <CategoryTiles />
+      {productSections.map((s) => (
+        <Suspense key={s.title} fallback={<ProductSectionSkeleton />}>
+          <ProductSection title={s.title} viewAllHref={s.viewAllHref} collection={s.collection} />
+        </Suspense>
+      ))}
+      <TrustStrip />
+      <Testimonials />
     </main>
   );
 }

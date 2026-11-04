@@ -12,10 +12,11 @@ test("layout shell shows promo, header, footer and WhatsApp button", async ({ pa
 test("desktop: Sarees dropdown lists categories", async ({ page, isMobile }) => {
   test.skip(isMobile, "desktop only");
   await page.goto("/");
-  await page.getByRole("button", { name: /Sarees/ }).click();
-  await expect(page.getByRole("link", { name: "Chanderi Silk Sarees" })).toBeVisible();
+  const nav = page.getByRole("navigation", { name: "Main" });
+  await nav.getByRole("button", { name: /Sarees/ }).click();
+  await expect(nav.getByRole("link", { name: "Chanderi Silk Sarees" })).toBeVisible();
   await page.keyboard.press("Escape");
-  await expect(page.getByRole("link", { name: "Chanderi Silk Sarees" })).toBeHidden();
+  await expect(nav.getByRole("link", { name: "Chanderi Silk Sarees" })).toBeHidden();
 });
 
 test("mobile: hamburger opens the menu", async ({ page, isMobile }) => {
