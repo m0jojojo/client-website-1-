@@ -1,4 +1,19 @@
-export type ProductSort = "newest" | "price-asc" | "price-desc" | "title-asc";
+export const PRODUCT_SORTS = [
+  "featured",
+  "title-asc",
+  "title-desc",
+  "price-asc",
+  "price-desc",
+  "date-desc",
+  "date-asc",
+] as const;
+export type ProductSort = (typeof PRODUCT_SORTS)[number];
+
+export const AVAILABILITY_VALUES = ["in-stock", "out-of-stock"] as const;
+export type Availability = (typeof AVAILABILITY_VALUES)[number];
+
+/** Counts and price bounds for the filter UI, scoped to a collection and/or search term. */
+export type Facets = { inStock: number; outOfStock: number; maxPricePaise: number };
 
 export type ProductSummary = {
   handle: string;

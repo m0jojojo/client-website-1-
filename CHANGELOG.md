@@ -6,6 +6,8 @@ All notable changes are documented here. Format based on Keep a Changelog.
 
 ### Added
 
+- Phase 4: collection pages with availability and price filters, 7 sort options and numbered pagination; search results page; header search with live suggestions; `/collections/all`; filter/sort/search support in the JSON API; unit, integration, e2e and accessibility tests.
+
 - Phase 3: home page with hero slider, 13 category tiles, five product carousels from the catalog, trust strip and testimonials; ProductCard and Carousel components; unit, e2e and accessibility tests.
 
 - Phase 2: Prisma/Neon Postgres schema (collections, products, variants, images), catalog data layer, JSON catalog API, seed from live store (201 products, 15 collections), unit and integration tests.

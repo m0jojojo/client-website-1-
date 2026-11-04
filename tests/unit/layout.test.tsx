@@ -31,9 +31,10 @@ describe("Header", () => {
   it("renders brand link and utility links", () => {
     render(<Header />);
     expect(screen.getByRole("link", { name: siteConfig.name })).toHaveAttribute("href", "/");
-    for (const name of ["Search", "Log in", "Wishlist", "Cart"]) {
+    for (const name of ["Log in", "Wishlist", "Cart"]) {
       expect(screen.getByRole("link", { name })).toBeInTheDocument();
     }
+    expect(screen.getByRole("button", { name: "Search" })).toBeInTheDocument();
   });
 
   it("opens the Sarees dropdown on click and closes with Escape", async () => {

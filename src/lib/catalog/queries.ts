@@ -1,7 +1,15 @@
 import type { Prisma } from "@/generated/prisma/client";
 import { getDb } from "@/lib/db";
 import { discountPercent } from "./pricing";
-import type { CollectionSummary, Page, ProductDetail, ProductSort, ProductSummary } from "./types";
+import type {
+  Availability,
+  CollectionSummary,
+  Facets,
+  Page,
+  ProductDetail,
+  ProductSort,
+  ProductSummary,
+} from "./types";
 
 export const PLACEHOLDER_IMAGE = "/images/placeholder.svg";
 
@@ -34,6 +42,11 @@ export type ListProductsOptions = {
   collection?: string;
   q?: string;
   sort?: ProductSort;
+  /** Empty or both values means no availability filter. */
+  availability?: Availability[];
+  /** Price bounds in paise, inclusive. A product matches if any variant is in range. */
+  minPricePaise?: number;
+  maxPricePaise?: number;
   page?: number;
   pageSize?: number;
 };
@@ -41,26 +54,63 @@ export type ListProductsOptions = {
 export function orderByFor(sort: ProductSort): Prisma.ProductOrderByWithRelationInput[] {
   switch (sort) {
     case "title-asc":
-      return [{ title: "asc" }];
-    case "newest":
+      return [{ title: "asc" }, { id: "asc" }];
+    case "title-desc":
+      return [{ title: "desc" }, { id: "asc" }];
+    case "date-asc":
+      return [{ createdAt: "asc" }, { id: "asc" }];
+    case "date-desc":
+    case "featured":
     default:
       return [{ createdAt: "desc" }, { id: "asc" }];
   }
 }
 
-export async function listProducts(opts: ListProductsOptions = {}): Promise<Page<ProductSummary>> {
-  const { collection, q, sort = "newest", page = 1, pageSize = 24 } = opts;
-  const db = getDb();
-  const where: Prisma.ProductWhereInput = {
+/** Collection and search scope, without availability or price (used for facet counts). */
+function scopeWhere(opts: Pick<ListProductsOptions, "collection" | "q">): Prisma.ProductWhereInput {
+  const { collection, q } = opts;
+  return {
     published: true,
     ...(collection ? { collections: { some: { collection: { handle: collection } } } } : {}),
     ...(q ? { title: { contains: q, mode: "insensitive" } } : {}),
   };
+}
+
+export function buildWhere(opts: ListProductsOptions): Prisma.ProductWhereInput {
+  const { availability = [], minPricePaise, maxPricePaise } = opts;
+  const and: Prisma.ProductWhereInput[] = [];
+
+  const wantIn = availability.includes("in-stock");
+  const wantOut = availability.includes("out-of-stock");
+  if (wantIn && !wantOut) and.push({ variants: { some: { inStock: true } } });
+  if (wantOut && !wantIn) and.push({ variants: { none: { inStock: true } } });
+
+  if (minPricePaise !== undefined || maxPricePaise !== undefined) {
+    and.push({
+      variants: {
+        some: {
+          pricePaise: {
+            ...(minPricePaise !== undefined ? { gte: minPricePaise } : {}),
+            ...(maxPricePaise !== undefined ? { lte: maxPricePaise } : {}),
+          },
+        },
+      },
+    });
+  }
+  return { ...scopeWhere(opts), ...(and.length ? { AND: and } : {}) };
+}
+
+export async function listProducts(opts: ListProductsOptions = {}): Promise<Page<ProductSummary>> {
+  const { sort = "featured", page = 1, pageSize = 24 } = opts;
+  const db = getDb();
+  const where = buildWhere(opts);
   const include = { variants: true, images: true } as const;
 
   // Price sorting depends on the primary variant, so it is done in memory (catalog is small).
   if (sort === "price-asc" || sort === "price-desc") {
-    const all = (await db.product.findMany({ where, include })).map(toSummary);
+    const all = (
+      await db.product.findMany({ where, include, orderBy: orderByFor("featured") })
+    ).map(toSummary);
     all.sort((a, b) =>
       sort === "price-asc" ? a.pricePaise - b.pricePaise : b.pricePaise - a.pricePaise,
     );
@@ -80,6 +130,20 @@ export async function listProducts(opts: ListProductsOptions = {}): Promise<Page
     db.product.count({ where }),
   ]);
   return paged(rows.map(toSummary), total, page, pageSize);
+}
+
+/** Facet counts for the filter UI. Ignores availability/price so the counts stay stable as filters change. */
+export async function getFacets(
+  opts: Pick<ListProductsOptions, "collection" | "q"> = {},
+): Promise<Facets> {
+  const db = getDb();
+  const scope = scopeWhere(opts);
+  const [inStock, total, agg] = await Promise.all([
+    db.product.count({ where: { ...scope, variants: { some: { inStock: true } } } }),
+    db.product.count({ where: scope }),
+    db.variant.aggregate({ _max: { pricePaise: true }, where: { product: scope } }),
+  ]);
+  return { inStock, outOfStock: total - inStock, maxPricePaise: agg._max.pricePaise ?? 0 };
 }
 
 function paged<T>(items: T[], total: number, page: number, pageSize: number): Page<T> {

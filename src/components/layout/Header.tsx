@@ -3,6 +3,7 @@
 import Link from "next/link";
 import { useEffect, useRef, useState } from "react";
 import { mainNav, siteConfig, type NavItem } from "@/lib/site";
+import { SearchBox } from "./SearchBox";
 
 function DesktopItem({ item }: { item: NavItem }) {
   const [open, setOpen] = useState(false);
@@ -122,9 +123,7 @@ export function Header() {
         </nav>
 
         <div className="flex items-center">
-          <IconLink href="/search" label="Search">
-            <span aria-hidden="true">&#128269;</span>
-          </IconLink>
+          <SearchBox />
           <IconLink href="/account/login" label="Log in">
             <span aria-hidden="true">&#128100;</span>
           </IconLink>

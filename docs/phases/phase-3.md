@@ -32,6 +32,6 @@
 
 - Images are placeholders everywhere (hero banners use solid colors). Real photos come when you supply them.
 - Testimonials are sample text: replace `testimonials` in `src/lib/home.ts` with real reviews before launch.
-- "Shop All" links to `/collections/all`, which Phase 4 must implement.
+- "Shop All" links to `/collections/all` (implemented in Phase 4).
 - CI has no database yet, so the "with catalog data" e2e tests run only locally. Add a `DATABASE_URL` secret pointing at a separate Neon branch to run them in CI.
 - Home page is partially prerendered: the page shell is static, product sections stream in. If the database is down, the product sections are simply omitted.

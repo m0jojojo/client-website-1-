@@ -1,5 +1,5 @@
 import { NextResponse } from "next/server";
-import { parseProductListParams } from "@/lib/catalog/params";
+import { paramsToOptions, parseProductListParams } from "@/lib/catalog/params";
 import { listProducts } from "@/lib/catalog";
 
 export async function GET(request: Request) {
@@ -10,5 +10,5 @@ export async function GET(request: Request) {
       { status: 400 },
     );
   }
-  return NextResponse.json(await listProducts(parsed.data));
+  return NextResponse.json(await listProducts(paramsToOptions(parsed.data)));
 }

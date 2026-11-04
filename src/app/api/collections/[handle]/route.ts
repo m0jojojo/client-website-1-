@@ -1,6 +1,6 @@
 import { NextResponse } from "next/server";
 import { getCollectionByHandle, listProducts } from "@/lib/catalog";
-import { parseProductListParams } from "@/lib/catalog/params";
+import { paramsToOptions, parseProductListParams } from "@/lib/catalog/params";
 
 export async function GET(request: Request, ctx: RouteContext<"/api/collections/[handle]">) {
   const { handle } = await ctx.params;
@@ -14,6 +14,6 @@ export async function GET(request: Request, ctx: RouteContext<"/api/collections/
       { status: 400 },
     );
   }
-  const products = await listProducts({ ...parsed.data, collection: handle });
+  const products = await listProducts({ ...paramsToOptions(parsed.data), collection: handle });
   return NextResponse.json({ collection, products });
 }
