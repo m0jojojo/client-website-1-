@@ -1,4 +1,4 @@
-import { render, screen, within } from "@testing-library/react";
+import { fireEvent, render, screen, within } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { Footer } from "@/components/layout/Footer";
 import { CartProvider } from "@/components/cart/CartProvider";
@@ -20,11 +20,38 @@ describe("site config", () => {
 });
 
 describe("PromoStrip", () => {
-  it("shows the promo messages", () => {
+  it("shows every promo message in the announcements region", () => {
     render(<PromoStrip />);
-    expect(screen.getByRole("region", { name: "Store announcements" })).toHaveTextContent(
-      /10% off on all prepaid orders/i,
-    );
+    const region = screen.getByRole("region", { name: "Store announcements" });
+    for (const m of siteConfig.promo)
+      expect(within(region).getAllByText(m).length).toBeGreaterThan(0);
+  });
+
+  it("exposes each message to screen readers only once, hiding the repeats used for the loop", () => {
+    render(<PromoStrip />);
+    const region = screen.getByRole("region", { name: "Store announcements" });
+    const readable = within(region).getAllByRole("listitem");
+    expect(readable).toHaveLength(siteConfig.promo.length);
+    expect(readable.map((li) => li.textContent?.replace("\u2022", "").trim())).toEqual([
+      ...siteConfig.promo,
+    ]);
+    // the markup holds 4 copies of each message in total (2 sets x 2 halves)
+    expect(region.querySelectorAll("li")).toHaveLength(siteConfig.promo.length * 4);
+  });
+
+  it("can be paused and resumed with a labelled toggle button", () => {
+    render(<PromoStrip />);
+    const region = screen.getByRole("region", { name: "Store announcements" });
+    const pause = screen.getByRole("button", { name: "Pause announcements" });
+    expect(pause).toHaveAttribute("aria-pressed", "false");
+    expect(region).toHaveAttribute("data-paused", "false");
+    fireEvent.click(pause);
+    const play = screen.getByRole("button", { name: "Play announcements" });
+    expect(play).toHaveAttribute("aria-pressed", "true");
+    expect(region).toHaveAttribute("data-paused", "true");
+    fireEvent.click(play);
+    expect(screen.getByRole("button", { name: "Pause announcements" })).toBeInTheDocument();
+    expect(region).toHaveAttribute("data-paused", "false");
   });
 });
 

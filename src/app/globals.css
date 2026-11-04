@@ -34,3 +34,48 @@ body {
   outline: 2px solid var(--accent);
   outline-offset: 2px;
 }
+
+/* ---- Scrolling announcement bar ---- */
+@keyframes promo-scroll {
+  from {
+    transform: translateX(0);
+  }
+  to {
+    transform: translateX(-50%);
+  }
+}
+
+.promo-track {
+  animation: promo-scroll 45s linear infinite;
+}
+
+/* The Pause/Play button is the control. Hovering with a real mouse also pauses, but only on devices
+   that truly hover: on touch screens a tap leaves a "stuck" hover that would keep the bar frozen. */
+.promo-marquee[data-paused="true"] .promo-track {
+  animation-play-state: paused;
+}
+@media (hover: hover) {
+  .promo-marquee:hover .promo-track {
+    animation-play-state: paused;
+  }
+}
+
+/* Reduced motion: no scrolling. Show one centred, wrapping set of messages and hide the pause button. */
+@media (prefers-reduced-motion: reduce) {
+  .promo-track {
+    animation: none;
+    width: auto;
+    justify-content: center;
+    padding-inline: 1rem;
+  }
+  .promo-half {
+    flex: 0 1 auto;
+    min-width: 0;
+    flex-wrap: wrap;
+    justify-content: center;
+  }
+  .promo-repeat,
+  .promo-control {
+    display: none;
+  }
+}
