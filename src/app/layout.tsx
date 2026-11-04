@@ -1,5 +1,7 @@
 import type { Metadata } from "next";
 import { DM_Sans } from "next/font/google";
+import { CartDrawer } from "@/components/cart/CartDrawer";
+import { CartProvider } from "@/components/cart/CartProvider";
 import { Footer } from "@/components/layout/Footer";
 import { Header } from "@/components/layout/Header";
 import { PromoStrip } from "@/components/layout/PromoStrip";
@@ -24,13 +26,16 @@ export default function RootLayout({ children }: LayoutProps<"/">) {
         >
           Skip to content
         </a>
-        <PromoStrip />
-        <Header />
-        <div id="main" className="flex-1">
-          {children}
-        </div>
-        <Footer />
-        <WhatsAppButton />
+        <CartProvider>
+          <PromoStrip />
+          <Header />
+          <div id="main" className="flex-1">
+            {children}
+          </div>
+          <Footer />
+          <WhatsAppButton />
+          <CartDrawer />
+        </CartProvider>
       </body>
     </html>
   );

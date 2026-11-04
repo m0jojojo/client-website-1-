@@ -21,7 +21,8 @@
     "db:seed": "prisma db seed",
     "db:studio": "prisma studio",
     "test:integration": "vitest run --config vitest.integration.config.mts",
-    "postinstall": "prisma generate"
+    "postinstall": "prisma generate",
+    "db:prune-carts": "tsx scripts/prune-carts.ts"
   },
   "dependencies": {
     "@neondatabase/serverless": "^1.2.0",

@@ -1,6 +1,8 @@
 import Image from "next/image";
 import Link from "next/link";
-import { formatRupees, type ProductSummary } from "@/lib/catalog";
+import { WishlistButton } from "@/components/wishlist/WishlistButton";
+import { formatRupees } from "@/lib/catalog/pricing";
+import type { ProductSummary } from "@/lib/catalog/types";
 
 export function ProductCard({ product }: { product: ProductSummary }) {
   const onSale = product.discountPercent > 0 && product.compareAtPricePaise;
@@ -29,6 +31,11 @@ export function ProductCard({ product }: { product: ProductSummary }) {
         </div>
         <h3 className="mt-3 line-clamp-2 text-sm font-medium">{product.title}</h3>
       </Link>
+      <WishlistButton
+        handle={product.handle}
+        title={product.title}
+        className="absolute top-2 right-2"
+      />
       <p className="mt-1 flex flex-wrap items-baseline gap-x-2 text-sm">
         <span className="font-semibold">{formatRupees(product.pricePaise)}</span>
         {onSale && (

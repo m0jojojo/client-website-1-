@@ -62,12 +62,6 @@ test.describe("product page", () => {
     await expect(page.getByRole("button", { name: "Increase quantity" })).toBeDisabled();
   });
 
-  test("Add to cart tells the visitor the cart is coming soon", async ({ page, request }) => {
-    await page.goto(`/products/${await firstHandle(request, "&availability=in-stock")}`);
-    await page.getByRole("button", { name: "Add to cart" }).click();
-    await expect(page.getByText(/cart is coming soon/i)).toBeVisible();
-  });
-
   test("a sold-out product has a disabled Sold out button", async ({ page, request }) => {
     await page.goto(`/products/${await firstHandle(request, "&availability=out-of-stock")}`);
     await expect(page.getByRole("button", { name: "Sold out" })).toBeDisabled();

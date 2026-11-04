@@ -2,10 +2,11 @@
 
 import { useId, useState } from "react";
 import { Button } from "@/components/ui/Button";
+import { MAX_QUANTITY } from "@/lib/cart/constants";
 import { discountPercent, formatRupees } from "@/lib/catalog/pricing";
 import type { ProductDetail } from "@/lib/catalog/types";
 
-export const MAX_QUANTITY = 10;
+export { MAX_QUANTITY };
 
 type Variant = ProductDetail["variants"][number];
 
@@ -17,12 +18,16 @@ export function PurchasePanel({
   title: string;
   variants: Variant[];
   /** Wired up in Phase 6 (cart). Until then clicking shows a "coming soon" notice. */
-  onAddToCart?: (variantId: string, quantity: number) => void;
+  onAddToCart?: (
+    variantId: string,
+    quantity: number,
+  ) => void | Promise<void | { ok: boolean; message?: string }>;
 }) {
   const firstAvailable = variants.find((v) => v.inStock) ?? variants[0];
   const [variantId, setVariantId] = useState(firstAvailable?.id);
   const [quantity, setQuantity] = useState(1);
   const [notice, setNotice] = useState("");
+  const [pending, setPending] = useState(false);
   const qtyId = useId();
 
   const variant = variants.find((v) => v.id === variantId) ?? firstAvailable;
@@ -32,9 +37,22 @@ export function PurchasePanel({
   const showVariants = variants.length > 1;
   const clamp = (n: number) => Math.min(MAX_QUANTITY, Math.max(1, Math.floor(n) || 1));
 
-  function add() {
-    if (onAddToCart) onAddToCart(variant.id, quantity);
-    else setNotice("The cart is coming soon. This button will work in the next release.");
+  async function add() {
+    if (!onAddToCart) {
+      setNotice("The cart is coming soon. This button will work in the next release.");
+      return;
+    }
+    setPending(true);
+    setNotice("");
+    try {
+      const result = await onAddToCart(variant.id, quantity);
+      if (result && !result.ok)
+        setNotice(result.message ?? "Sorry, we couldn't add that to your cart.");
+    } catch {
+      setNotice("Sorry, we couldn't add that to your cart. Please try again.");
+    } finally {
+      setPending(false);
+    }
   }
 
   return (
@@ -132,11 +150,11 @@ export function PurchasePanel({
         <Button
           size="lg"
           className="w-full"
-          disabled={!variant.inStock}
+          disabled={!variant.inStock || pending}
           onClick={add}
           aria-describedby={notice ? "cart-notice" : undefined}
         >
-          {variant.inStock ? "Add to cart" : "Sold out"}
+          {!variant.inStock ? "Sold out" : pending ? "Adding..." : "Add to cart"}
         </Button>
         <p id="cart-notice" role="status" className="text-muted mt-3 text-sm">
           {notice}

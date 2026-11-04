@@ -11,3 +11,5 @@ Living document, updated each phase.
 Layout: `src/app` routes, `tests/unit`, `tests/e2e`, `docs/`.
 
 Data layer: `src/lib/catalog` (queries, pricing, params), DB client `src/lib/db.ts`, API under `src/app/api`. Seed snapshot in `prisma/seed`.
+
+Cart: `src/lib/cart` (service, token, http helpers) + `/api/cart`; state in the browser via `CartProvider`. Carts are rows in Neon keyed by a hashed cookie token; prices are always read from the catalog. Wishlist: `src/lib/wishlist-store.ts` (localStorage external store).

@@ -42,6 +42,8 @@ function toSummary(p: ProductWithRelations): ProductSummary {
 export type ListProductsOptions = {
   collection?: string;
   q?: string;
+  /** Restrict to these product handles. */
+  handles?: string[];
   sort?: ProductSort;
   /** Empty or both values means no availability filter. */
   availability?: Availability[];
@@ -68,10 +70,13 @@ export function orderByFor(sort: ProductSort): Prisma.ProductOrderByWithRelation
 }
 
 /** Collection and search scope, without availability or price (used for facet counts). */
-function scopeWhere(opts: Pick<ListProductsOptions, "collection" | "q">): Prisma.ProductWhereInput {
-  const { collection, q } = opts;
+function scopeWhere(
+  opts: Pick<ListProductsOptions, "collection" | "q" | "handles">,
+): Prisma.ProductWhereInput {
+  const { collection, q, handles } = opts;
   return {
     published: true,
+    ...(handles ? { handle: { in: handles } } : {}),
     ...(collection ? { collections: { some: { collection: { handle: collection } } } } : {}),
     ...(q ? { title: { contains: q, mode: "insensitive" } } : {}),
   };

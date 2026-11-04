@@ -6,7 +6,7 @@
 - **Gallery**: main image, "Enlarge" dialog (Escape or Close to dismiss). When a product has several images it also shows a counter, previous/next arrows, thumbnails and left/right arrow keys. All products currently have one placeholder image.
 - **Price block**: sale price, struck-through regular price, `% OFF` badge, "Taxes included.", and the 10% prepaid-order banner (as on the live site).
 - **Purchase panel**: option picker (only shown when a product has more than one variant; price follows the selected variant), quantity stepper (1 to 10, typed values are clamped), Add to cart button. Sold-out products show a disabled "Sold out" button.
-- **Add to cart** is not connected yet: clicking shows "The cart is coming soon". Phase 6 passes an `onAddToCart` handler into `PurchasePanel`.
+- **Add to cart** was a placeholder in this phase; Phase 6 connected it to the real cart.
 - **Trust badges**: authentic hand print, 7-day easy returns, free shipping, COD available.
 - **Description**: the product text from the database, split into paragraphs (no invented fabric/colour/wash-care fields).
 - **Related products**: up to 8 products from the product's most specific collection (in stock first, newest first), topped up with newest products for small collections; never includes the product itself.
@@ -38,7 +38,7 @@
 
 ## Known gaps / decisions
 
-- Add to cart does nothing yet (Phase 6). There is no wishlist button on the product page yet (Phase 6, as the live site has none either).
+- Add to cart and the wishlist button were connected in Phase 6.
 - Only placeholder images exist, so the multi-image gallery is covered by unit tests but not visible in the browser until real photos are added.
 - Structured data has no image URL yet because there are no real images or a configured site URL.
 - On a missing product, the browser tab title may read either "Product not found" or Next.js's own "404: This page could not be found." (Next.js controls this; both are correct.) As with collections, the HTTP status is 200 for the 404 page because the page streams.

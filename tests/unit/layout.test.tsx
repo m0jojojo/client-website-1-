@@ -1,6 +1,7 @@
 import { render, screen, within } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { Footer } from "@/components/layout/Footer";
+import { CartProvider } from "@/components/cart/CartProvider";
 import { Header } from "@/components/layout/Header";
 import { PromoStrip } from "@/components/layout/PromoStrip";
 import { WhatsAppButton } from "@/components/layout/WhatsAppButton";
@@ -27,18 +28,37 @@ describe("PromoStrip", () => {
   });
 });
 
+const renderHeader = () =>
+  render(
+    <CartProvider>
+      <Header />
+    </CartProvider>,
+  );
+
 describe("Header", () => {
+  beforeEach(() => {
+    vi.stubGlobal(
+      "fetch",
+      vi.fn().mockResolvedValue({
+        ok: true,
+        json: async () => ({ lines: [], itemCount: 0, subtotalPaise: 0, savingsPaise: 0 }),
+      }),
+    );
+  });
+  afterEach(() => vi.unstubAllGlobals());
+
   it("renders brand link and utility links", () => {
-    render(<Header />);
+    renderHeader();
     expect(screen.getByRole("link", { name: siteConfig.name })).toHaveAttribute("href", "/");
-    for (const name of ["Log in", "Wishlist", "Cart"]) {
+    for (const name of ["Log in", "Wishlist"]) {
       expect(screen.getByRole("link", { name })).toBeInTheDocument();
     }
     expect(screen.getByRole("button", { name: "Search" })).toBeInTheDocument();
+    expect(screen.getByRole("button", { name: "Cart" })).toBeInTheDocument();
   });
 
   it("opens the Sarees dropdown on click and closes with Escape", async () => {
-    render(<Header />);
+    renderHeader();
     const main = screen.getByRole("navigation", { name: "Main" });
     const trigger = within(main).getByRole("button", { name: /Sarees/ });
     expect(trigger).toHaveAttribute("aria-expanded", "false");
@@ -51,7 +71,7 @@ describe("Header", () => {
   });
 
   it("toggles the mobile menu", async () => {
-    render(<Header />);
+    renderHeader();
     expect(screen.queryByRole("navigation", { name: "Mobile" })).not.toBeInTheDocument();
     await userEvent.click(screen.getByRole("button", { name: "Open menu" }));
     expect(screen.getByRole("navigation", { name: "Mobile" })).toBeInTheDocument();

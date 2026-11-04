@@ -6,6 +6,18 @@ const rupees = z.coerce.number().int().min(0).max(10_000_000);
 export const productListParams = z.object({
   collection: z.string().trim().min(1).max(100).optional(),
   q: z.string().trim().min(1).max(100).optional(),
+  /** Comma-separated product handles (used by the wishlist page). */
+  handles: z
+    .string()
+    .max(6000)
+    .transform((v) =>
+      v
+        .split(",")
+        .map((h) => h.trim())
+        .filter(Boolean)
+        .slice(0, 60),
+    )
+    .optional(),
   sort: z.enum(PRODUCT_SORTS).default("featured"),
   availability: z.array(z.enum(AVAILABILITY_VALUES)).default([]),
   minPrice: rupees.optional(),
@@ -94,6 +106,7 @@ export function paramsToOptions(p: z.infer<typeof productListParams>) {
   return {
     collection: p.collection,
     q: p.q,
+    handles: p.handles,
     sort: p.sort,
     availability: p.availability,
     minPricePaise: p.minPrice !== undefined ? p.minPrice * 100 : undefined,

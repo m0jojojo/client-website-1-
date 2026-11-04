@@ -5,7 +5,8 @@ import { ProductSectionSkeleton, ProductSectionView } from "@/components/home/Pr
 import { Breadcrumbs } from "@/components/product/Breadcrumbs";
 import { Description } from "@/components/product/Description";
 import { ProductGallery } from "@/components/product/ProductGallery";
-import { PurchasePanel } from "@/components/product/PurchasePanel";
+import { AddToCartPanel } from "@/components/product/AddToCartPanel";
+import { WishlistButton } from "@/components/wishlist/WishlistButton";
 import { TrustBadges } from "@/components/product/TrustBadges";
 import {
   buildProductJsonLd,
@@ -60,7 +61,13 @@ async function ProductContent({ params }: PageProps<"/products/[handle]">) {
         <div>
           <h1 className="text-2xl font-semibold">{product.title}</h1>
           <div className="mt-4">
-            <PurchasePanel title={product.title} variants={product.variants} />
+            <AddToCartPanel title={product.title} variants={product.variants} />
+            <WishlistButton
+              handle={product.handle}
+              title={product.title}
+              withLabel
+              className="mt-3 w-full justify-center"
+            />
           </div>
           <TrustBadges />
           <Description text={product.description} />

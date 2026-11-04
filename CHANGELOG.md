@@ -6,6 +6,8 @@ All notable changes are documented here. Format based on Keep a Changelog.
 
 ### Added
 
+- Phase 6: server-side shopping cart (Neon) with drawer and /cart page, live Add to cart, header cart badge; browser-saved wishlist with heart buttons, header count and /wishlist page; `handles` filter in the products API; cart and wishlist unit, integration, e2e and accessibility tests.
+
 - Phase 5: product detail page with gallery and enlarge dialog, price and discount block, variant and quantity controls, sold-out handling, trust badges, description, related products, breadcrumbs, SEO metadata and structured data; unit, integration, e2e and accessibility tests.
 
 - Phase 4: collection pages with availability and price filters, 7 sort options and numbered pagination; search results page; header search with live suggestions; `/collections/all`; filter/sort/search support in the JSON API; unit, integration, e2e and accessibility tests.

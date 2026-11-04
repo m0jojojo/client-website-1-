@@ -3,6 +3,8 @@
 import Link from "next/link";
 import { useEffect, useRef, useState } from "react";
 import { mainNav, siteConfig, type NavItem } from "@/lib/site";
+import { CartButton } from "@/components/cart/CartButton";
+import { WishlistLink } from "@/components/wishlist/WishlistLink";
 import { SearchBox } from "./SearchBox";
 
 function DesktopItem({ item }: { item: NavItem }) {
@@ -127,12 +129,8 @@ export function Header() {
           <IconLink href="/account/login" label="Log in">
             <span aria-hidden="true">&#128100;</span>
           </IconLink>
-          <IconLink href="/wishlist" label="Wishlist">
-            <span aria-hidden="true">&#9825;</span>
-          </IconLink>
-          <IconLink href="/cart" label="Cart">
-            <span aria-hidden="true">&#128722;</span>
-          </IconLink>
+          <WishlistLink />
+          <CartButton />
         </div>
       </div>
 
