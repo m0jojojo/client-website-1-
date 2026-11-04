@@ -3,7 +3,16 @@
 import { useRef } from "react";
 
 /** Horizontal scroll-snap carousel with previous/next buttons. */
-export function Carousel({ label, children }: { label: string; children: React.ReactNode }) {
+export function Carousel({
+  label,
+  children,
+  arrowTop = "top-1/3",
+}: {
+  label: string;
+  children: React.ReactNode;
+  /** Tailwind class placing the arrows vertically (e.g. level with the middle of round images). */
+  arrowTop?: string;
+}) {
   const track = useRef<HTMLUListElement>(null);
 
   function scrollByPage(dir: 1 | -1) {
@@ -13,14 +22,14 @@ export function Carousel({ label, children }: { label: string; children: React.R
   }
 
   const arrow =
-    "absolute top-1/3 z-10 hidden h-10 w-10 items-center justify-center rounded-full border border-border bg-background shadow md:flex hover:bg-surface";
+    "absolute z-10 hidden h-10 w-10 items-center justify-center rounded-full border border-border bg-background shadow md:flex hover:bg-surface";
 
   return (
     <div className="relative" role="region" aria-roledescription="carousel" aria-label={label}>
       <button
         type="button"
         aria-label={`Previous ${label}`}
-        className={`${arrow} -left-3`}
+        className={`${arrow} ${arrowTop} -left-3`}
         onClick={() => scrollByPage(-1)}
       >
         <span aria-hidden="true">&#8249;</span>
@@ -34,7 +43,7 @@ export function Carousel({ label, children }: { label: string; children: React.R
       <button
         type="button"
         aria-label={`Next ${label}`}
-        className={`${arrow} -right-3`}
+        className={`${arrow} ${arrowTop} -right-3`}
         onClick={() => scrollByPage(1)}
       >
         <span aria-hidden="true">&#8250;</span>
@@ -43,6 +52,13 @@ export function Carousel({ label, children }: { label: string; children: React.R
   );
 }
 
-export function CarouselItem({ children }: { children: React.ReactNode }) {
-  return <li className="w-[46%] shrink-0 snap-start sm:w-[31%] lg:w-[22%]">{children}</li>;
+export function CarouselItem({
+  children,
+  widthClass = "w-[46%] sm:w-[31%] lg:w-[22%]",
+}: {
+  children: React.ReactNode;
+  /** Width of one item; the default shows about 2, 3 or 4.5 product cards. */
+  widthClass?: string;
+}) {
+  return <li className={`shrink-0 snap-start ${widthClass}`}>{children}</li>;
 }

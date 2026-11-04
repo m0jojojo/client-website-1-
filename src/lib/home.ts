@@ -27,7 +27,14 @@ export const heroSlides = [
   },
 ] as const;
 
-export const categoryTiles = [
+export type CategoryTile = {
+  handle: string;
+  title: string;
+  /** Path under /public (e.g. "/images/categories/cotton-sarees.jpg"). Uses the placeholder when omitted. */
+  image?: string;
+};
+
+export const categoryTiles: readonly CategoryTile[] = [
   { handle: "modal-silk-sarees", title: "Modal Silk Sarees" },
   { handle: "nashpal-mulcotton-sarees", title: "Nashpal Mulcotton Sarees" },
   { handle: "chanderi-silk-sarees", title: "Chanderi Silk Sarees" },
@@ -41,7 +48,7 @@ export const categoryTiles = [
   { handle: "linen-suits", title: "Linen Suits" },
   { handle: "kota-dupatta-cotton-suits", title: "Kota Dupatta Cotton Suits" },
   { handle: "linen-dupatta-cotton-suit", title: "Linen Dupatta Cotton Suit" },
-] as const;
+];
 
 export const productSections = [
   { title: "Trending Now", viewAllHref: "/collections/new-arrivals", collection: "new-arrivals" },

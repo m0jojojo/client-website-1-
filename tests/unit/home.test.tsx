@@ -159,6 +159,45 @@ describe("CategoryTiles", () => {
       "/collections/mulmul-sarees",
     );
   });
+
+  it("shows every picture in a circle, with the name underneath", () => {
+    render(<CategoryTiles />);
+    const links = screen.getAllByRole("link");
+    expect(links).toHaveLength(13);
+    for (const link of links) {
+      const circle = link.querySelector("span.rounded-full");
+      expect(circle, link.textContent ?? "").not.toBeNull();
+      expect(circle?.className).toContain("aspect-square");
+      expect(circle?.querySelector("img")).not.toBeNull();
+      expect(link.textContent?.trim().length).toBeGreaterThan(3);
+    }
+  });
+
+  it("puts the tiles in a slidable carousel with previous and next buttons", () => {
+    render(<CategoryTiles />);
+    const carousel = screen.getByRole("region", { name: "Categories" });
+    expect(carousel).toHaveAttribute("aria-roledescription", "carousel");
+    const track = within(carousel).getByRole("list");
+    expect(within(track).getAllByRole("listitem")).toHaveLength(13);
+    expect(track.className).toContain("overflow-x-auto");
+    expect(track.className).toContain("snap-x");
+    track.scrollBy = vi.fn();
+    Object.defineProperty(track, "clientWidth", { value: 800, configurable: true }); // jsdom has no layout
+    fireEvent.click(screen.getByRole("button", { name: "Next Categories" }));
+    expect((track.scrollBy as ReturnType<typeof vi.fn>).mock.calls[0][0].left).toBeGreaterThan(0);
+    fireEvent.click(screen.getByRole("button", { name: "Previous Categories" }));
+    expect((track.scrollBy as ReturnType<typeof vi.fn>).mock.calls[1][0].left).toBeLessThan(0);
+  });
+
+  it("uses a placeholder picture unless a tile has its own image", () => {
+    render(<CategoryTiles />);
+    for (const img of document.querySelectorAll("img")) {
+      expect(img.getAttribute("src")).toContain("placeholder.svg");
+    }
+    for (const c of categoryTiles) {
+      if (c.image) expect(c.image.startsWith("/")).toBe(true);
+    }
+  });
 });
 
 describe("TrustStrip and Testimonials", () => {
