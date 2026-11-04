@@ -2,6 +2,7 @@ import { config } from "dotenv";
 import { readFileSync } from "node:fs";
 import { PrismaNeon } from "@prisma/adapter-neon";
 import { PrismaClient } from "../../src/generated/prisma/client";
+import { assertSafeToSeed } from "./guard";
 
 config({ path: ".env.local" });
 config();
@@ -34,6 +35,14 @@ async function main() {
   if (!url) throw new Error("DATABASE_URL is not set");
   const db = new PrismaClient({ adapter: new PrismaNeon({ connectionString: url }) });
   const data: Snapshot = JSON.parse(readFileSync("prisma/seed/catalog.json", "utf8"));
+
+  const [orders, wishlistItems, cartItems, users] = await Promise.all([
+    db.order.count(),
+    db.wishlistItem.count(),
+    db.cartItem.count(),
+    db.user.count(),
+  ]);
+  assertSafeToSeed({ orders, wishlistItems, cartItems, users }, process.env.FORCE_SEED === "true");
 
   // Idempotent: wipe catalog tables then reload from the snapshot.
   await db.$transaction([

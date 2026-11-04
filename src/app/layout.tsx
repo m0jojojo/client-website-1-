@@ -7,7 +7,7 @@ import { Footer } from "@/components/layout/Footer";
 import { Header } from "@/components/layout/Header";
 import { PromoStrip } from "@/components/layout/PromoStrip";
 import { WhatsAppButton } from "@/components/layout/WhatsAppButton";
-import { getSiteUrl } from "@/lib/seo/site-url";
+import { getSiteUrl, siteRobotsMetadata } from "@/lib/seo/site-url";
 import { siteConfig } from "@/lib/site";
 import "./globals.css";
 
@@ -15,6 +15,7 @@ const dmSans = DM_Sans({ variable: "--font-dm-sans", subsets: ["latin"], display
 
 export const metadata: Metadata = {
   metadataBase: new URL(getSiteUrl()),
+  robots: siteRobotsMetadata(),
   title: { default: siteConfig.name, template: `%s | ${siteConfig.name}` },
   description: siteConfig.tagline,
 };

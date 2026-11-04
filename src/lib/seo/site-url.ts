@@ -43,3 +43,13 @@ export function isIndexableEnvironment(env: Env = process.env): boolean {
   if (env.VERCEL_ENV && env.VERCEL_ENV !== "production") return false;
   return true;
 }
+
+/**
+ * Page-level "do not index" for places that must stay out of Google (previews, the free test
+ * address). robots.txt asks crawlers not to visit; this tag also removes pages that were found anyway.
+ */
+export function siteRobotsMetadata(
+  env: Env = process.env,
+): { index: false; follow: false } | undefined {
+  return isIndexableEnvironment(env) ? undefined : { index: false, follow: false };
+}

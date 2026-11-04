@@ -6,6 +6,8 @@ All notable changes are documented here. Format based on Keep a Changelog.
 
 ### Added
 
+- Hosting preparation: Vercel settings (Singapore region, Node 24), seed safety guard that refuses to wipe a database holding customer data, separate production database commands (`db:deploy:prod`, `db:status:prod`, `db:seed:prod`) that refuse to touch the development database, a build-time switch that keeps a test site out of Google (robots and noindex), and a step-by-step deployment guide.
+
 - SEO S2 (titles and descriptions): unique, length-checked titles and descriptions for the home page, collections (with paging) and all products; ALL CAPS names made readable; identical product names tagged "(Ref …)"; empty collections kept out of the sitemap and marked noindex; unit, database and browser tests.
 
 - SEO S1 (foundations): site address setting, sitemap.xml, robots.txt (previews blocked), canonical links with sorted/filtered views kept out of the index, en-IN language, real 404 status for missing products and collections via a request proxy, branded not-found page; unit and browser tests.

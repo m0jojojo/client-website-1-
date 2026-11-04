@@ -22,7 +22,10 @@
     "db:studio": "prisma studio",
     "test:integration": "vitest run --config vitest.integration.config.mts",
     "postinstall": "prisma generate",
-    "db:prune-carts": "tsx scripts/prune-carts.ts"
+    "db:prune-carts": "tsx scripts/prune-carts.ts",
+    "db:deploy:prod": "tsx scripts/prod-db.ts deploy",
+    "db:status:prod": "tsx scripts/prod-db.ts status",
+    "db:seed:prod": "tsx scripts/prod-db.ts seed"
   },
   "dependencies": {
     "@neondatabase/serverless": "^1.2.0",
@@ -69,5 +72,8 @@
     "*.{json,md,css,yml}": [
       "prettier --write"
     ]
+  },
+  "engines": {
+    "node": "24.x"
   }
 }
