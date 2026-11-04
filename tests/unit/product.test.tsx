@@ -1,4 +1,4 @@
-import { fireEvent, render, screen } from "@testing-library/react";
+import { act, fireEvent, render, screen, waitFor } from "@testing-library/react";
 import { Breadcrumbs } from "@/components/product/Breadcrumbs";
 import { Description } from "@/components/product/Description";
 import { ProductGallery } from "@/components/product/ProductGallery";
@@ -219,5 +219,127 @@ describe("catalog helpers", () => {
     const out = serializeJsonLd({ name: "</script><script>alert(1)</script>" });
     expect(out).not.toContain("</script>");
     expect(JSON.parse(out).name).toBe("</script><script>alert(1)</script>");
+  });
+});
+
+describe("PurchasePanel pinned Add to cart bar", () => {
+  type IOCallback = (entries: { isIntersecting: boolean; intersectionRatio: number }[]) => void;
+  let callbacks: IOCallback[] = [];
+  let disconnected = 0;
+
+  beforeEach(() => {
+    callbacks = [];
+    disconnected = 0;
+    vi.stubGlobal(
+      "IntersectionObserver",
+      class {
+        constructor(cb: IOCallback) {
+          callbacks.push(cb);
+        }
+        observe() {}
+        disconnect() {
+          disconnected++;
+        }
+      },
+    );
+  });
+  afterEach(() => {
+    vi.unstubAllGlobals();
+    delete document.body.dataset.stickyCta;
+  });
+
+  const setVisible = (fully: boolean) =>
+    act(() => callbacks.at(-1)!([{ isIntersecting: fully, intersectionRatio: fully ? 1 : 0 }]));
+  const bar = () => screen.getByTestId("add-to-cart-bar");
+
+  it("stays in place while the button is fully on screen", () => {
+    render(<PurchasePanel title="T" variants={[variant()]} />);
+    setVisible(true);
+    expect(bar().className).not.toContain("fixed");
+    expect(document.body.dataset.stickyCta).toBeUndefined();
+    expect(screen.queryByText("₹1,299", { selector: "span.block" })).not.toBeInTheDocument();
+  });
+
+  it("pins to the bottom of the screen when the button is out of view", () => {
+    render(<PurchasePanel title="T" variants={[variant()]} />);
+    setVisible(false);
+    expect(bar().className).toContain("fixed");
+    expect(bar().className).toContain("bottom-0");
+    expect(document.body.dataset.stickyCta).toBe("true");
+  });
+
+  it("also pins when the button is only partly visible", () => {
+    render(<PurchasePanel title="T" variants={[variant()]} />);
+    act(() => callbacks.at(-1)!([{ isIntersecting: true, intersectionRatio: 0.4 }]));
+    expect(bar().className).toContain("fixed");
+  });
+
+  it("goes back into place when the button scrolls into view again", () => {
+    render(<PurchasePanel title="T" variants={[variant()]} />);
+    setVisible(false);
+    setVisible(true);
+    expect(bar().className).not.toContain("fixed");
+    expect(document.body.dataset.stickyCta).toBeUndefined();
+  });
+
+  it("is the very same single button in both places, so there is never a duplicate", () => {
+    render(<PurchasePanel title="T" variants={[variant()]} />);
+    const before = screen.getByRole("button", { name: "Add to cart" });
+    setVisible(false);
+    const after = screen.getByRole("button", { name: "Add to cart" });
+    expect(screen.getAllByRole("button", { name: /add to cart/i })).toHaveLength(1);
+    expect(after).toBe(before);
+  });
+
+  it("shows the price beside the button only while pinned, hidden from screen readers", () => {
+    render(<PurchasePanel title="T" variants={[variant()]} />);
+    setVisible(false);
+    const price = bar().querySelector("p[aria-hidden='true']");
+    expect(price).toHaveTextContent("₹1,299");
+    expect(price).toHaveTextContent("₹2,699");
+  });
+
+  it("adds to the cart with the chosen quantity from the pinned bar", async () => {
+    const onAdd = vi.fn().mockResolvedValue({ ok: true });
+    render(<PurchasePanel title="T" variants={[variant({ id: "v7" })]} onAddToCart={onAdd} />);
+    fireEvent.click(screen.getByRole("button", { name: "Increase quantity" }));
+    setVisible(false);
+    fireEvent.click(screen.getByRole("button", { name: "Add to cart" }));
+    await waitFor(() => expect(onAdd).toHaveBeenCalledWith("v7", 2));
+  });
+
+  it("shows the message inside the pinned bar so it is not hidden off screen", async () => {
+    const onAdd = vi
+      .fn()
+      .mockResolvedValue({ ok: false, message: "Sorry, this item is sold out." });
+    render(<PurchasePanel title="T" variants={[variant()]} onAddToCart={onAdd} />);
+    setVisible(false);
+    fireEvent.click(screen.getByRole("button", { name: "Add to cart" }));
+    const msg = await screen.findByText("Sorry, this item is sold out.");
+    expect(bar()).toContainElement(msg);
+    expect(screen.getAllByRole("status")).toHaveLength(1);
+  });
+
+  it("keeps showing a disabled Sold out button when pinned", () => {
+    render(<PurchasePanel title="T" variants={[variant({ inStock: false })]} />);
+    setVisible(false);
+    expect(screen.getByRole("button", { name: "Sold out" })).toBeDisabled();
+  });
+
+  it("stops watching and clears the page marker when removed", () => {
+    const { unmount } = render(<PurchasePanel title="T" variants={[variant()]} />);
+    setVisible(false);
+    expect(document.body.dataset.stickyCta).toBe("true");
+    unmount();
+    expect(disconnected).toBeGreaterThan(0);
+    expect(document.body.dataset.stickyCta).toBeUndefined();
+  });
+
+  it("works without IntersectionObserver (old browsers): the button simply stays in place", () => {
+    vi.unstubAllGlobals();
+    // @ts-expect-error simulate a browser without the API
+    delete globalThis.IntersectionObserver;
+    render(<PurchasePanel title="T" variants={[variant()]} />);
+    expect(bar().className).not.toContain("fixed");
   });
 });

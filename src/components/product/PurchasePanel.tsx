@@ -1,6 +1,6 @@
 "use client";
 
-import { useId, useState } from "react";
+import { useEffect, useId, useRef, useState } from "react";
 import { Button } from "@/components/ui/Button";
 import { MAX_QUANTITY } from "@/lib/cart/constants";
 import { discountPercent, formatRupees } from "@/lib/catalog/pricing";
@@ -29,6 +29,30 @@ export function PurchasePanel({
   const [notice, setNotice] = useState("");
   const [pending, setPending] = useState(false);
   const qtyId = useId();
+
+  // The Add to cart button moves into a bar pinned to the bottom of the screen whenever its normal
+  // spot is not fully on screen (scrolled past, or still below the fold on a phone). It is the same
+  // button either way, so there is never a duplicate. The slot keeps its height to avoid page jumps.
+  const slot = useRef<HTMLDivElement>(null);
+  const [pinned, setPinned] = useState(false);
+  useEffect(() => {
+    const el = slot.current;
+    if (!el || typeof IntersectionObserver === "undefined") return;
+    const io = new IntersectionObserver(
+      ([entry]) => setPinned(!entry.isIntersecting || entry.intersectionRatio < 1),
+      { threshold: [1] },
+    );
+    io.observe(el);
+    return () => io.disconnect();
+  }, []);
+  // Tell the rest of the page (WhatsApp button, footer spacing) that the bar is showing.
+  useEffect(() => {
+    if (!pinned) return;
+    document.body.dataset.stickyCta = "true";
+    return () => {
+      delete document.body.dataset.stickyCta;
+    };
+  }, [pinned]);
 
   const variant = variants.find((v) => v.id === variantId) ?? firstAvailable;
   if (!variant) return null;
@@ -146,20 +170,52 @@ export function PurchasePanel({
         </div>
       </div>
 
-      <div className="mt-6">
-        <Button
-          size="lg"
-          className="w-full"
-          disabled={!variant.inStock || pending}
-          onClick={add}
-          aria-describedby={notice ? "cart-notice" : undefined}
+      <div ref={slot} className="mt-6 min-h-12" data-pinned={pinned}>
+        <div
+          className={
+            pinned
+              ? "border-border bg-background fixed inset-x-0 bottom-0 z-30 border-t px-4 py-3 shadow-[0_-4px_12px_rgba(0,0,0,0.08)]"
+              : undefined
+          }
+          data-testid="add-to-cart-bar"
         >
-          {!variant.inStock ? "Sold out" : pending ? "Adding..." : "Add to cart"}
-        </Button>
+          <div className={pinned ? "mx-auto flex max-w-7xl items-center gap-4" : undefined}>
+            {pinned && (
+              <p className="shrink-0 leading-tight" aria-hidden="true">
+                <span className="block text-lg font-semibold">
+                  {formatRupees(variant.pricePaise)}
+                </span>
+                {pct > 0 && variant.compareAtPricePaise && (
+                  <s className="text-muted block text-xs">
+                    {formatRupees(variant.compareAtPricePaise)}
+                  </s>
+                )}
+              </p>
+            )}
+            <div className={`min-w-0 flex-1 ${pinned ? "md:ml-auto md:max-w-sm" : ""}`}>
+              {pinned && notice && (
+                <p id="cart-notice" role="status" className="mb-2 text-sm text-red-700">
+                  {notice}
+                </p>
+              )}
+              <Button
+                size="lg"
+                className="w-full"
+                disabled={!variant.inStock || pending}
+                onClick={add}
+                aria-describedby={notice ? "cart-notice" : undefined}
+              >
+                {!variant.inStock ? "Sold out" : pending ? "Adding..." : "Add to cart"}
+              </Button>
+            </div>
+          </div>
+        </div>
+      </div>
+      {!pinned && (
         <p id="cart-notice" role="status" className="text-muted mt-3 text-sm">
           {notice}
         </p>
-      </div>
+      )}
       <span className="sr-only">{`Purchasing ${title}`}</span>
     </div>
   );

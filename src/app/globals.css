@@ -79,3 +79,16 @@ body {
     display: none;
   }
 }
+
+/* ---- Pinned "Add to cart" bar on product pages ---- */
+/* While the bar is showing, lift the WhatsApp button above it, leave room under the page content,
+   and keep keyboard focus from landing underneath the bar. */
+body[data-sticky-cta="true"] {
+  padding-bottom: 5rem;
+}
+body[data-sticky-cta="true"] .whatsapp-fab {
+  bottom: 5.5rem;
+}
+html:has(body[data-sticky-cta="true"]) {
+  scroll-padding-bottom: 6rem;
+}
