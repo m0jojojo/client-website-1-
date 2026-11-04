@@ -4,6 +4,7 @@ import { Suspense } from "react";
 import { ListingSkeleton, ListingView } from "@/components/listing/ListingView";
 import { getCollectionByHandle, getFacets, listProducts, listingQuery } from "@/lib/catalog";
 import { parseListingState, toListOptions } from "@/lib/catalog/params";
+import { collectionSeo } from "@/lib/seo/listing-seo";
 
 const ALL = "all";
 
@@ -17,7 +18,13 @@ export async function generateMetadata(
 ): Promise<Metadata> {
   const { handle } = await props.params;
   const collection = await resolveCollection(handle);
-  return { title: collection?.title ?? "Collection not found" };
+  if (!collection) return { title: "Collection not found", robots: { index: false, follow: true } };
+  const seo = collectionSeo(`/collections/${handle}`, parseListingState(await props.searchParams));
+  return {
+    title: collection.title,
+    alternates: { canonical: seo.canonicalPath },
+    ...(seo.noindex ? { robots: { index: false, follow: true } } : {}),
+  };
 }
 
 export default function CollectionPage(props: PageProps<"/collections/[handle]">) {

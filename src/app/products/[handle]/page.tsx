@@ -19,11 +19,12 @@ import {
 export async function generateMetadata(props: PageProps<"/products/[handle]">): Promise<Metadata> {
   const { handle } = await props.params;
   const product = await getProductByHandle(handle);
-  if (!product) return { title: "Product not found" };
+  if (!product) return { title: "Product not found", robots: { index: false, follow: true } };
   const description = product.description.replace(/\s+/g, " ").trim().slice(0, 160);
   return {
     title: product.title,
     description: description || undefined,
+    alternates: { canonical: `/products/${product.handle}` },
     openGraph: { title: product.title, description: description || undefined, type: "website" },
   };
 }

@@ -24,6 +24,7 @@ export default defineConfig({
       GOOGLE_CLIENT_ID: process.env.GOOGLE_CLIENT_ID ?? "e2e-placeholder-client-id",
       GOOGLE_CLIENT_SECRET: process.env.GOOGLE_CLIENT_SECRET ?? "e2e-placeholder-client-secret",
       BETTER_AUTH_URL: "http://localhost:3000",
+      NEXT_PUBLIC_SITE_URL: "http://localhost:3000",
       // Parallel test workers all share one IP and sign in often; see src/lib/auth-rate-limit.ts.
       AUTH_RATE_LIMIT_DISABLED: "true",
       // Payments run against the local stand-in, never real Razorpay, whatever is in .env.local.

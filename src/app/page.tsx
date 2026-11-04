@@ -1,3 +1,4 @@
+import type { Metadata } from "next";
 import { Suspense } from "react";
 import { CategoryTiles } from "@/components/home/CategoryTiles";
 import { HeroSlider } from "@/components/home/HeroSlider";
@@ -6,6 +7,8 @@ import { Testimonials } from "@/components/home/Testimonials";
 import { TrustStrip } from "@/components/home/TrustStrip";
 import { productSections } from "@/lib/home";
 import { siteConfig } from "@/lib/site";
+
+export const metadata: Metadata = { alternates: { canonical: "/" } };
 
 export default function Home() {
   return (

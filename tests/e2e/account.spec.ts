@@ -199,13 +199,13 @@ test.describe("addresses", () => {
     await page.getByRole("button", { name: "Edit address for Asha Verma" }).click();
     await page.getByLabel("City").fill("Jodhpur");
     await page.getByRole("button", { name: "Save changes" }).click();
-    await expect(list.getByText(/Jodhpur/)).toBeVisible();
+    await expect(list).toContainText("Jodhpur");
 
     await page.reload();
     await expect(
       page.getByRole("list", { name: "Saved addresses" }).getByRole("listitem"),
     ).toHaveCount(2);
-    await expect(page.getByText(/Jodhpur/)).toBeVisible();
+    await expect(page.getByRole("list", { name: "Saved addresses" })).toContainText("Jodhpur");
 
     await page.getByRole("button", { name: "Delete address for Meera Joshi" }).click();
     await page.getByRole("button", { name: "Yes, delete" }).click();

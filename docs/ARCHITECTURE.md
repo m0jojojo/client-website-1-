@@ -17,3 +17,5 @@ Cart: `src/lib/cart` (service, token, http helpers) + `/api/cart`; state in the 
 Accounts: Better Auth (`src/lib/auth.ts`) with the Prisma adapter and Google as the only provider; session helpers in `src/lib/auth-session.ts`; account services in `src/lib/account`. Carts are owned by a user or by an anonymous cookie (`CartOwner`); `/api/account/sync` merges the guest cart and wishlist at sign-in.
 
 Checkout and payments: `src/lib/orders` (pricing, validation, order service) and `src/lib/payments` (Razorpay signatures, order creation, mock-mode rules). The browser sends only identity, address and payment method; the server prices everything from its own cart and catalog. Payments are confirmed by a verified signature (`/api/checkout/verify`) or a signed webhook (`/api/webhooks/razorpay`), both idempotent. Guests open their order with a secret token in the link.
+
+SEO: `src/lib/seo` (site address, canonical rules), `src/app/sitemap.ts`, `src/app/robots.ts`. `src/proxy.ts` checks product and collection names before rendering so unknown ones return a real 404 (`src/lib/catalog/handles.ts` keeps a short-lived name list).

@@ -7,19 +7,21 @@ import { Footer } from "@/components/layout/Footer";
 import { Header } from "@/components/layout/Header";
 import { PromoStrip } from "@/components/layout/PromoStrip";
 import { WhatsAppButton } from "@/components/layout/WhatsAppButton";
+import { getSiteUrl } from "@/lib/seo/site-url";
 import { siteConfig } from "@/lib/site";
 import "./globals.css";
 
 const dmSans = DM_Sans({ variable: "--font-dm-sans", subsets: ["latin"], display: "swap" });
 
 export const metadata: Metadata = {
+  metadataBase: new URL(getSiteUrl()),
   title: { default: siteConfig.name, template: `%s | ${siteConfig.name}` },
   description: siteConfig.tagline,
 };
 
 export default function RootLayout({ children }: LayoutProps<"/">) {
   return (
-    <html lang="en" className={`${dmSans.variable} h-full antialiased`}>
+    <html lang="en-IN" className={`${dmSans.variable} h-full antialiased`}>
       <body className="flex min-h-full flex-col">
         <a
           href="#main"
