@@ -6,9 +6,14 @@ import { ProductSection, ProductSectionSkeleton } from "@/components/home/Produc
 import { Testimonials } from "@/components/home/Testimonials";
 import { TrustStrip } from "@/components/home/TrustStrip";
 import { productSections } from "@/lib/home";
+import { HOME_SEO } from "@/lib/seo/copy";
 import { siteConfig } from "@/lib/site";
 
-export const metadata: Metadata = { alternates: { canonical: "/" } };
+export const metadata: Metadata = {
+  title: { absolute: HOME_SEO.title },
+  description: HOME_SEO.description,
+  alternates: { canonical: "/" },
+};
 
 export default function Home() {
   return (

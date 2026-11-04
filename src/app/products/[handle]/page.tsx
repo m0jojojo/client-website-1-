@@ -1,6 +1,7 @@
 import type { Metadata } from "next";
 import { notFound } from "next/navigation";
 import { Suspense } from "react";
+import { productSeo } from "@/lib/seo/copy";
 import { ProductSectionSkeleton, ProductSectionView } from "@/components/home/ProductSection";
 import { Breadcrumbs } from "@/components/product/Breadcrumbs";
 import { Description } from "@/components/product/Description";
@@ -12,6 +13,7 @@ import {
   buildProductJsonLd,
   getProductByHandle,
   getRelatedProducts,
+  getTitleTwins,
   pickPrimaryCollection,
   serializeJsonLd,
 } from "@/lib/catalog";
@@ -20,12 +22,12 @@ export async function generateMetadata(props: PageProps<"/products/[handle]">): 
   const { handle } = await props.params;
   const product = await getProductByHandle(handle);
   if (!product) return { title: "Product not found", robots: { index: false, follow: true } };
-  const description = product.description.replace(/\s+/g, " ").trim().slice(0, 160);
+  const seo = productSeo({ ...product, twinHandles: await getTitleTwins(product.title) });
   return {
-    title: product.title,
-    description: description || undefined,
+    title: { absolute: seo.title },
+    description: seo.description,
     alternates: { canonical: `/products/${product.handle}` },
-    openGraph: { title: product.title, description: description || undefined, type: "website" },
+    openGraph: { title: seo.title, description: seo.description, type: "website" },
   };
 }
 

@@ -67,8 +67,8 @@ describe("robots.txt", () => {
 describe("sitemap.xml", () => {
   it("lists the fixed pages, every collection and every published product, with full addresses", async () => {
     mocks.db.collection.findMany.mockResolvedValue([
-      { handle: "cotton-sarees" },
-      { handle: "linen-suits" },
+      { handle: "cotton-sarees", _count: { products: 67 } },
+      { handle: "linen-suits", _count: { products: 6 } },
     ]);
     const updated = new Date("2026-10-20T10:00:00Z");
     mocks.db.product.findMany.mockResolvedValue([
@@ -88,6 +88,17 @@ describe("sitemap.xml", () => {
     expect(entries.find((e) => e.url.endsWith("tea-print-saree"))?.lastModified).toEqual(updated);
     expect(new Set(urls).size).toBe(urls.length);
   });
+  it("leaves out empty collections", async () => {
+    mocks.db.collection.findMany.mockResolvedValue([
+      { handle: "cotton-sarees", _count: { products: 3 } },
+      { handle: "cotton-linen-sarees", _count: { products: 0 } },
+    ]);
+    mocks.db.product.findMany.mockResolvedValue([]);
+    const urls = (await sitemap()).map((e) => e.url);
+    expect(urls).toContain("https://theblockbagru.com/collections/cotton-sarees");
+    expect(urls.some((u) => u.includes("cotton-linen-sarees"))).toBe(false);
+  });
+
   it("asks only for published products and never lists private pages", async () => {
     mocks.db.collection.findMany.mockResolvedValue([]);
     mocks.db.product.findMany.mockResolvedValue([]);

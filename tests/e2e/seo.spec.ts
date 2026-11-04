@@ -105,7 +105,10 @@ test.describe("sitemap.xml", () => {
     expect(xml).toContain("<urlset");
 
     const urls = [...xml.matchAll(/<loc>([^<]+)<\/loc>/g)].map((m) => m[1]);
-    const collections = (await (await request.get("/api/collections")).json()).items.length;
+    const allCollections: { handle: string; productCount: number }[] = (
+      await (await request.get("/api/collections")).json()
+    ).items;
+    const collections = allCollections.filter((c) => c.productCount > 0).length; // empty collections are left out
     const products = (await (await request.get("/api/products?pageSize=1")).json()).total;
 
     expect(urls).toHaveLength(2 + collections + products); // home + all-products page + collections + products
@@ -115,6 +118,12 @@ test.describe("sitemap.xml", () => {
     expect(urls).toContain(`${SITE}/collections/all`);
     expect(urls).toContain(`${SITE}/collections/cotton-sarees`);
     expect(urls.filter((u) => u.includes("/products/")).length).toBe(products);
+    for (const c of allCollections.filter((c) => c.productCount === 0)) {
+      expect(
+        urls.some((u) => u.endsWith(`/collections/${c.handle}`)),
+        c.handle,
+      ).toBe(false);
+    }
     for (const bad of [
       "/cart",
       "/checkout",
@@ -208,5 +217,135 @@ test.describe("real 404 for pages that do not exist", () => {
     await expect(page.getByRole("link", { name: "The Block Bagru" }).first()).toBeVisible(); // site header is still there
     await page.getByRole("link", { name: "Browse all products" }).click();
     await expect(page).toHaveURL(/\/collections\/all$/);
+  });
+});
+
+const metaDescription = (page: Page) =>
+  page.locator('meta[name="description"]').getAttribute("content");
+
+test.describe("page titles and descriptions", () => {
+  test("the home page has a keyword-rich title and a description", async ({ page }) => {
+    await page.goto("/");
+    await expect(page).toHaveTitle("Hand Block Print Sarees & Suits from Bagru | The Block Bagru");
+    const d = (await metaDescription(page))!;
+    expect(d).toContain("Bagru and Ajrakh");
+    expect(d.length).toBeGreaterThan(80);
+    expect(d.length).toBeLessThanOrEqual(160);
+  });
+
+  test.describe("catalog pages", () => {
+    test.skip(!hasDb, "needs a seeded database");
+
+    test("collections have a buying-intent title and a description with the product count", async ({
+      page,
+    }) => {
+      await page.goto("/collections/cotton-sarees");
+      await expect(page).toHaveTitle("Buy Cotton Sarees Online | The Block Bagru");
+      expect(await metaDescription(page)).toMatch(
+        /^Shop \d+ cotton sarees with traditional Bagru block prints\./,
+      );
+      await page.goto("/collections/new-arrivals");
+      await expect(page).toHaveTitle(/^New Arrivals: Hand Block Printed Sarees & Suits/);
+      await page.goto("/collections/all");
+      await expect(page).toHaveTitle(/^All Hand Block Printed Sarees & Suits/);
+    });
+
+    test("later pages of a collection have their own title and description", async ({ page }) => {
+      await page.goto("/collections/cotton-sarees");
+      const t1 = await page.title();
+      const d1 = await metaDescription(page);
+      await page.goto("/collections/cotton-sarees?page=2");
+      expect(await page.title()).toContain("(Page 2)");
+      expect(await page.title()).not.toBe(t1);
+      expect(await metaDescription(page)).not.toBe(d1);
+      expect(await metaDescription(page)).toContain("page 2");
+    });
+
+    test("an empty collection still opens but is kept out of Google", async ({ page, request }) => {
+      const empty = (
+        (await (await request.get("/api/collections")).json()).items as {
+          handle: string;
+          productCount: number;
+        }[]
+      ).filter((c) => c.productCount === 0);
+      expect(empty.length).toBeGreaterThan(0);
+      for (const c of empty) {
+        const res = await page.goto(`/collections/${c.handle}`);
+        expect(res?.status(), c.handle).toBe(200);
+        expect(await robotsMeta(page), c.handle).toContain("noindex");
+      }
+    });
+
+    test("ALL CAPS product names become readable titles that match the page heading", async ({
+      page,
+    }) => {
+      await page.goto("/products/nashpal-dyes-mulcotton-saree-1024");
+      await expect(page).toHaveTitle("Nashpal Dyes Mulcotton Saree 1022 | The Block Bagru");
+      await expect(page.getByRole("heading", { level: 1 })).toHaveText(
+        /nashpal dyes mulcotton saree 1022/i,
+      );
+      const d = (await metaDescription(page))!;
+      expect(d.startsWith("Buy Nashpal Dyes Mulcotton Saree 1022 online for ₹")).toBe(true);
+      expect(d.length).toBeLessThanOrEqual(160);
+    });
+
+    test("products that share a stored name get different titles", async ({ page }) => {
+      const handles = [
+        "geometrical-printed-mulcotton-saree",
+        "geometrical-printed-mulcotton-saree-1",
+        "geometrical-printed-mulcotton-saree-2",
+        "maheshwari-silk-saree-bgpt-1131",
+        "maheshwari-silk-saree-bgpt-1136",
+        "nashpal-dyes-mulcotton-saree-1018",
+        "nashpal-dyes-mulcotton-saree-1021",
+        "nashpal-dyes-mulcotton-saree-1020",
+        "nashpal-dyes-mulcotton-saree-1022",
+      ];
+      const titles: string[] = [];
+      const descriptions: string[] = [];
+      for (const h of handles) {
+        await page.goto(`/products/${h}`);
+        titles.push(await page.title());
+        descriptions.push((await metaDescription(page))!);
+      }
+      expect(new Set(titles).size, titles.join(" | ")).toBe(handles.length);
+      expect(new Set(descriptions).size).toBe(handles.length);
+    });
+
+    test("a sample of product pages all have sound, unique titles and descriptions", async ({
+      page,
+      request,
+    }) => {
+      const xml = await (await request.get("/sitemap.xml")).text();
+      const products = [...xml.matchAll(/<loc>([^<]+\/products\/[^<]+)<\/loc>/g)].map((m) =>
+        m[1].replace("http://localhost:3000", ""),
+      );
+      const sample = products.filter((_, i) => i % 11 === 0).slice(0, 18);
+      expect(sample.length).toBeGreaterThan(10);
+      const titles: string[] = [];
+      const descs: string[] = [];
+      for (const path of sample) {
+        await page.goto(path);
+        const title = await page.title();
+        const desc = (await metaDescription(page))!;
+        expect(title.length, title).toBeLessThanOrEqual(75);
+        expect(title, path).not.toMatch(/undefined|NaN/);
+        expect(desc.length, path).toBeGreaterThanOrEqual(60);
+        expect(desc.length, path).toBeLessThanOrEqual(160);
+        expect(await page.locator('meta[property="og:title"]').getAttribute("content")).toBe(title);
+        expect(await page.locator('meta[property="og:description"]').getAttribute("content")).toBe(
+          desc,
+        );
+        titles.push(title);
+        descs.push(desc);
+      }
+      expect(new Set(titles).size).toBe(titles.length);
+      expect(new Set(descs).size).toBe(descs.length);
+    });
+  });
+
+  test("the not-found and private pages keep simple titles", async ({ page }) => {
+    await page.goto("/cart");
+    await expect(page).toHaveTitle(/^Your cart/);
   });
 });

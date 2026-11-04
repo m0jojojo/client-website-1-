@@ -17,15 +17,20 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
   try {
     const db = getDb();
     const [collections, products] = await Promise.all([
-      db.collection.findMany({ select: { handle: true }, orderBy: { position: "asc" } }),
+      db.collection.findMany({
+        select: { handle: true, _count: { select: { products: true } } },
+        orderBy: { position: "asc" },
+      }),
       db.product.findMany({
         where: { published: true },
         select: { handle: true, updatedAt: true },
         orderBy: { createdAt: "desc" },
       }),
     ]);
-    for (const c of collections)
+    // An empty collection is a thin page; it is kept out of the sitemap (and marked noindex).
+    for (const c of collections.filter((c) => c._count.products > 0)) {
       entries.push({ url: absoluteUrl(`/collections/${encodeURIComponent(c.handle)}`) });
+    }
     for (const p of products) {
       entries.push({
         url: absoluteUrl(`/products/${encodeURIComponent(p.handle)}`),

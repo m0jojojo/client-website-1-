@@ -6,6 +6,8 @@ All notable changes are documented here. Format based on Keep a Changelog.
 
 ### Added
 
+- SEO S2 (titles and descriptions): unique, length-checked titles and descriptions for the home page, collections (with paging) and all products; ALL CAPS names made readable; identical product names tagged "(Ref …)"; empty collections kept out of the sitemap and marked noindex; unit, database and browser tests.
+
 - SEO S1 (foundations): site address setting, sitemap.xml, robots.txt (previews blocked), canonical links with sorted/filtered views kept out of the index, en-IN language, real 404 status for missing products and collections via a request proxy, branded not-found page; unit and browser tests.
 
 - Phase 8: checkout page, orders (numbers from BB1001), cash on delivery and Razorpay online payment with a 10% prepaid discount, server-side signature verification, signed webhook, order status page with Pay now, account order list, guest order claiming at sign-in, local test-payment mode, and unit, database and browser tests.

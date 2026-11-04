@@ -30,7 +30,7 @@
 
 ## Known gaps / next
 
-- The home page and collections still have generic titles and no descriptions (S2).
+- Titles and descriptions were improved in S2 (see `s2-titles-and-descriptions.md`).
 - No structured data for the business itself (S3), no share previews or icons (S4), no analytics (S5).
 - Old Shopify-style addresses need redirects at launch (`/collections/x/products/y`).
 - The address is `http://localhost:3000` until you set `NEXT_PUBLIC_SITE_URL`.

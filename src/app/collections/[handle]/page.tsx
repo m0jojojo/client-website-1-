@@ -4,7 +4,8 @@ import { Suspense } from "react";
 import { ListingSkeleton, ListingView } from "@/components/listing/ListingView";
 import { getCollectionByHandle, getFacets, listProducts, listingQuery } from "@/lib/catalog";
 import { parseListingState, toListOptions } from "@/lib/catalog/params";
-import { collectionSeo } from "@/lib/seo/listing-seo";
+import { collectionSeo as listingSeo } from "@/lib/seo/listing-seo";
+import { collectionSeo as collectionCopy } from "@/lib/seo/copy";
 
 const ALL = "all";
 
@@ -19,11 +20,18 @@ export async function generateMetadata(
   const { handle } = await props.params;
   const collection = await resolveCollection(handle);
   if (!collection) return { title: "Collection not found", robots: { index: false, follow: true } };
-  const seo = collectionSeo(`/collections/${handle}`, parseListingState(await props.searchParams));
+  const state = parseListingState(await props.searchParams);
+  const seo = listingSeo(`/collections/${handle}`, state);
+  const facets = await getFacets({ collection: handle === ALL ? undefined : handle });
+  const productCount = facets.inStock + facets.outOfStock;
+  const copy = collectionCopy({ handle, title: collection.title, productCount, page: state.page });
+  // An empty collection has nothing to show, so it should not appear in search results.
+  const noindex = seo.noindex || productCount === 0;
   return {
-    title: collection.title,
+    title: { absolute: copy.title },
+    description: copy.description,
     alternates: { canonical: seo.canonicalPath },
-    ...(seo.noindex ? { robots: { index: false, follow: true } } : {}),
+    ...(noindex ? { robots: { index: false, follow: true } } : {}),
   };
 }
 

@@ -247,3 +247,12 @@ export async function getRelatedProducts(
   }
   return { collection: primary, items };
 }
+
+/** Handles of every published product whose name equals this one (ignoring capital letters). */
+export async function getTitleTwins(title: string): Promise<string[]> {
+  const rows = await getDb().product.findMany({
+    where: { published: true, title: { equals: title.trim(), mode: "insensitive" } },
+    select: { handle: true },
+  });
+  return rows.map((r) => r.handle);
+}
