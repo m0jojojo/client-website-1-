@@ -43,3 +43,6 @@ next-env.d.ts
 # tests
 /playwright-report/
 /test-results/
+
+# generated
+/src/generated/
