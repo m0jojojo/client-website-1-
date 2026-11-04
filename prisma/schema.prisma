@@ -35,16 +35,17 @@ model Product {
 
 /// Prices are stored in paise (integer) to avoid floating point errors.
 model Variant {
-  id                  String     @id @default(cuid())
+  id                  String      @id @default(cuid())
   productId           String
-  product             Product    @relation(fields: [productId], references: [id], onDelete: Cascade)
+  product             Product     @relation(fields: [productId], references: [id], onDelete: Cascade)
   title               String
-  sku                 String?    @unique
+  sku                 String?     @unique
   pricePaise          Int
   compareAtPricePaise Int?
-  inStock             Boolean    @default(true)
-  position            Int        @default(0)
+  inStock             Boolean     @default(true)
+  position            Int         @default(0)
   cartItems           CartItem[]
+  orderItems          OrderItem[]
 
   @@index([productId])
 }
@@ -115,6 +116,7 @@ model User {
   addresses     Address[]
   wishlist      WishlistItem[]
   cart          Cart?
+  orders        Order[]
 }
 
 model Session {
@@ -191,4 +193,97 @@ model WishlistItem {
 
   @@id([userId, productId])
   @@index([productId])
+}
+
+// ---- Orders and payments ----
+
+enum OrderStatus {
+  PENDING_PAYMENT
+  CONFIRMED
+  CANCELLED
+}
+
+enum PaymentMethod {
+  RAZORPAY
+  COD
+}
+
+enum PaymentStatus {
+  PENDING
+  PAID
+  FAILED
+  REFUNDED
+}
+
+/// A customer order. Prices, address and items are copied in at purchase time and never change.
+model Order {
+  id                String         @id @default(cuid())
+  /// Human-friendly number (shown as BB1001, BB1002, ...). The sequence starts at 1001.
+  orderNumber       Int            @unique @default(autoincrement())
+  /// Secret that lets a guest open their own order page.
+  publicToken       String         @unique
+  /// Sent by the browser once per checkout attempt, so a double click cannot create two orders.
+  idempotencyKey    String         @unique
+  userId            String?
+  user              User?          @relation(fields: [userId], references: [id], onDelete: SetNull)
+  email             String
+  phone             String
+  status            OrderStatus    @default(PENDING_PAYMENT)
+  paymentMethod     PaymentMethod
+  paymentStatus     PaymentStatus  @default(PENDING)
+  subtotalPaise     Int
+  discountPaise     Int            @default(0)
+  shippingPaise     Int            @default(0)
+  totalPaise        Int
+  shipName          String
+  shipPhone         String
+  shipLine1         String
+  shipLine2         String?
+  shipLandmark      String?
+  shipCity          String
+  shipState         String
+  shipPincode       String
+  razorpayOrderId   String?        @unique
+  razorpayPaymentId String?        @unique
+  paidAt            DateTime?
+  failureReason     String?
+  createdAt         DateTime       @default(now())
+  updatedAt         DateTime       @updatedAt
+  items             OrderItem[]
+  events            PaymentEvent[]
+
+  @@index([userId, createdAt])
+  @@index([email])
+}
+
+model OrderItem {
+  id                  String   @id @default(cuid())
+  orderId             String
+  order               Order    @relation(fields: [orderId], references: [id], onDelete: Cascade)
+  variantId           String?
+  variant             Variant? @relation(fields: [variantId], references: [id], onDelete: SetNull)
+  handle              String
+  title               String
+  variantTitle        String?
+  imageUrl            String
+  unitPricePaise      Int
+  compareAtPricePaise Int?
+  quantity            Int
+  lineTotalPaise      Int
+
+  @@index([orderId])
+}
+
+/// Every payment notification we have processed, so a repeated webhook is applied only once.
+model PaymentEvent {
+  id        String   @id @default(cuid())
+  orderId   String?
+  order     Order?   @relation(fields: [orderId], references: [id], onDelete: SetNull)
+  provider  String
+  eventId   String   @unique
+  type      String
+  payload   Json
+  createdAt DateTime @default(now())
+
+  @@index([orderId])
 }

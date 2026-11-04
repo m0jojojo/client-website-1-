@@ -26,6 +26,11 @@ export default defineConfig({
       BETTER_AUTH_URL: "http://localhost:3000",
       // Parallel test workers all share one IP and sign in often; see src/lib/auth-rate-limit.ts.
       AUTH_RATE_LIMIT_DISABLED: "true",
+      // Payments run against the local stand-in, never real Razorpay, whatever is in .env.local.
+      PAYMENTS_MOCK: "true",
+      RAZORPAY_KEY_ID: "",
+      RAZORPAY_KEY_SECRET: "",
+      RAZORPAY_WEBHOOK_SECRET: "e2e-webhook-secret",
     },
     timeout: 180_000,
   },

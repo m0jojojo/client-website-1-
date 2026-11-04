@@ -56,7 +56,7 @@ Without these the login page shows "Google sign-in isn't set up yet" and everyth
 ## Known gaps / decisions
 
 - Google only: no email/password, no phone OTP. Account deletion and exporting data are not built yet (planned with Phase 11 hardening; needed for privacy compliance).
-- Orders appear in Phase 8. Guest checkout stays allowed; orders will be matched to accounts by email later.
+- Orders arrived in Phase 8: guest checkout is allowed, and guest orders join the account by email at sign-in.
 - The login merge makes several database queries and takes a few seconds from a distant dev machine. In production run the Vercel functions in the same region as Neon (Singapore, `sin1`) to cut this to a fraction of a second.
 - Better Auth's rate limiter keeps its counters in each server instance's memory. On Vercel that limits less strictly than it looks; move it to the database or a shared store in Phase 11.
 - `AUTH_RATE_LIMIT_DISABLED=true` exists only for the automated browser tests. Never set it in production.

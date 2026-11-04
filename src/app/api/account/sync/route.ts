@@ -3,6 +3,7 @@ import { errorResponse, isSameOrigin, json, readJson, requireUser } from "@/lib/
 import { listWishlistHandles, mergeWishlist } from "@/lib/account/wishlist";
 import { clearCartCookie, readTokenHash } from "@/lib/cart/http";
 import { getCartView, mergeGuestCartIntoUser } from "@/lib/cart/service";
+import { claimGuestOrders } from "@/lib/orders/service";
 
 const body = z.object({
   wishlist: z.array(z.string().trim().min(1).max(200)).max(200).default([]),
@@ -24,6 +25,8 @@ export async function POST(request: Request) {
       await clearCartCookie();
     }
     await mergeWishlist(user.id, wishlist);
+    // Orders placed as a guest with this (Google-verified) email now belong to the account.
+    await claimGuestOrders({ id: user.id, email: user.email });
     return json({
       wishlist: await listWishlistHandles(user.id),
       cart: await getCartView({ userId: user.id }),

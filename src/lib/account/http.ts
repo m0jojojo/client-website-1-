@@ -15,11 +15,14 @@ export async function requireUser(): Promise<SessionUser | Response> {
 
 const STATUS = { NOT_FOUND: 404, LIMIT_REACHED: 409 } as const;
 
-/** Turns zod issues into { field: message } so forms can show errors next to inputs. */
+/**
+ * Turns zod issues into { field: message } so forms can show errors next to inputs.
+ * Nested fields are reported with a dotted path, e.g. "address.phone".
+ */
 export function fieldErrors(err: ZodError): Record<string, string> {
   const out: Record<string, string> = {};
   for (const issue of err.issues) {
-    const key = String(issue.path[0] ?? "form");
+    const key = issue.path.length ? issue.path.map(String).join(".") : "form";
     if (!out[key]) out[key] = issue.message;
   }
   return out;
