@@ -3,6 +3,7 @@
 import Link from "next/link";
 import { useEffect, useRef, useState } from "react";
 import { mainNav, siteConfig, type NavItem } from "@/lib/site";
+import { AccountLink } from "@/components/account/AccountLink";
 import { CartButton } from "@/components/cart/CartButton";
 import { WishlistLink } from "@/components/wishlist/WishlistLink";
 import { SearchBox } from "./SearchBox";
@@ -74,22 +75,6 @@ function DesktopItem({ item }: { item: NavItem }) {
   );
 }
 
-function IconLink({
-  href,
-  label,
-  children,
-}: {
-  href: string;
-  label: string;
-  children: React.ReactNode;
-}) {
-  return (
-    <Link href={href} aria-label={label} className="hover:bg-surface rounded-sm p-2">
-      {children}
-    </Link>
-  );
-}
-
 export function Header() {
   const [mobileOpen, setMobileOpen] = useState(false);
 
@@ -126,9 +111,7 @@ export function Header() {
 
         <div className="flex items-center">
           <SearchBox />
-          <IconLink href="/account/login" label="Log in">
-            <span aria-hidden="true">&#128100;</span>
-          </IconLink>
+          <AccountLink />
           <WishlistLink />
           <CartButton />
         </div>

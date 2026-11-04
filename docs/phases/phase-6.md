@@ -48,7 +48,7 @@
 
 - Checkout is Phase 8; the Checkout buttons link to `/checkout` (404 until then).
 - The prepaid 10% discount and shipping are only described in the cart; they are applied at checkout (Phase 8). Taxes are shown as "included".
-- Carts are anonymous. Phase 7 attaches a cart to an account at login and merges it with the browser cart; the wishlist is moved into the account at the same time.
+- Carts started anonymous; Phase 7 attaches them to accounts and merges them at sign-in.
 - There is no rate limiting on the cart API yet (planned for Phase 11).
 - Stock is only "in stock / sold out"; real quantities arrive with orders (Phase 8).
 - The seed script wipes catalog tables; because cart lines reference variants, re-seeding also empties carts.

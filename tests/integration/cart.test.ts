@@ -14,9 +14,9 @@ import { getDb } from "@/lib/db";
 const hasDb = !!process.env.DATABASE_URL;
 const created: string[] = [];
 const newCart = () => {
-  const hash = hashCartToken(generateCartToken());
-  created.push(hash);
-  return hash;
+  const tokenHash = hashCartToken(generateCartToken());
+  created.push(tokenHash);
+  return { tokenHash };
 };
 
 async function variantFor(opts: { inStock: boolean; offset?: number }) {
@@ -189,15 +189,17 @@ describe.skipIf(!hasDb)("cart service (real database)", () => {
     await addItem(fresh, v.id, 1);
     await addItem(old, v.id, 1);
     await getDb().cart.update({
-      where: { tokenHash: old },
+      where: { tokenHash: old.tokenHash },
       data: { updatedAt: new Date(Date.now() - 90 * 24 * 60 * 60 * 1000) },
     });
     await getDb()
-      .$executeRaw`UPDATE "Cart" SET "updatedAt" = NOW() - INTERVAL '90 days' WHERE "tokenHash" = ${old}`;
+      .$executeRaw`UPDATE "Cart" SET "updatedAt" = NOW() - INTERVAL '90 days' WHERE "tokenHash" = ${old.tokenHash}`;
     expect(await pruneStaleCarts(60)).toBeGreaterThanOrEqual(1);
     expect((await getCartView(old)).lines).toHaveLength(0);
     expect((await getCartView(fresh)).lines).toHaveLength(1);
-    expect(await deleteCarts([fresh])).toBe(1);
-    expect(await getDb().cartItem.count({ where: { cart: { tokenHash: fresh } } })).toBe(0);
+    expect(await deleteCarts([fresh.tokenHash])).toBe(1);
+    expect(await getDb().cartItem.count({ where: { cart: { tokenHash: fresh.tokenHash } } })).toBe(
+      0,
+    );
   });
 });

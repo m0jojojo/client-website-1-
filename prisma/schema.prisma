@@ -28,6 +28,7 @@ model Product {
   variants    Variant[]
   images      ProductImage[]
   collections CollectionProduct[]
+  wishlisted  WishlistItem[]
 
   @@index([createdAt])
 }
@@ -70,12 +71,14 @@ model CollectionProduct {
   @@index([productId])
 }
 
-/// A shopping cart tied to an anonymous browser via a hashed cookie token.
-/// userId is filled in when accounts arrive (Phase 7).
+/// A shopping cart: anonymous (hashed cookie token) or owned by a signed-in customer.
 model Cart {
   id        String     @id @default(cuid())
-  tokenHash String     @unique
-  userId    String?
+  /// Set for anonymous carts (hash of the browser cookie token); null for carts owned by a user.
+  tokenHash String?    @unique
+  /// Set for signed-in customers. One cart per user.
+  userId    String?    @unique
+  user      User?      @relation(fields: [userId], references: [id], onDelete: Cascade)
   createdAt DateTime   @default(now())
   updatedAt DateTime   @updatedAt
   items     CartItem[]
@@ -95,4 +98,97 @@ model CartItem {
 
   @@unique([cartId, variantId])
   @@index([variantId])
+}
+
+// ---- Accounts (Better Auth) ----
+
+model User {
+  id            String         @id
+  name          String
+  email         String         @unique
+  emailVerified Boolean        @default(false)
+  image         String?
+  createdAt     DateTime       @default(now())
+  updatedAt     DateTime       @updatedAt
+  sessions      Session[]
+  accounts      Account[]
+  addresses     Address[]
+  wishlist      WishlistItem[]
+  cart          Cart?
+}
+
+model Session {
+  id        String   @id
+  expiresAt DateTime
+  token     String   @unique
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+  ipAddress String?
+  userAgent String?
+  userId    String
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId])
+}
+
+model Account {
+  id                    String    @id
+  accountId             String
+  providerId            String
+  userId                String
+  user                  User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+  accessToken           String?
+  refreshToken          String?
+  idToken               String?
+  accessTokenExpiresAt  DateTime?
+  refreshTokenExpiresAt DateTime?
+  scope                 String?
+  password              String?
+  createdAt             DateTime  @default(now())
+  updatedAt             DateTime  @updatedAt
+
+  @@index([userId])
+}
+
+model Verification {
+  id         String   @id
+  identifier String
+  value      String
+  expiresAt  DateTime
+  createdAt  DateTime @default(now())
+  updatedAt  DateTime @updatedAt
+
+  @@index([identifier])
+}
+
+/// Saved delivery addresses (India). Used at checkout.
+model Address {
+  id        String   @id @default(cuid())
+  userId    String
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  fullName  String
+  phone     String
+  line1     String
+  line2     String?
+  landmark  String?
+  city      String
+  state     String
+  pincode   String
+  isDefault Boolean  @default(false)
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@index([userId])
+}
+
+/// A signed-in customer's saved products (the browser wishlist is merged into this at login).
+model WishlistItem {
+  userId    String
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  productId String
+  product   Product  @relation(fields: [productId], references: [id], onDelete: Cascade)
+  createdAt DateTime @default(now())
+
+  @@id([userId, productId])
+  @@index([productId])
 }

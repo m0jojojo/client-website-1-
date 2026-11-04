@@ -6,6 +6,8 @@ All notable changes are documented here. Format based on Keep a Changelog.
 
 ### Added
 
+- Phase 7: Google sign-in with Better Auth on Neon, account area (overview, addresses, orders placeholder), saved Indian delivery addresses, account-owned cart and wishlist with guest-to-account merge at sign-in, security checks (origin, strict validation, safe redirects, rate limits), unit, integration, e2e and accessibility tests.
+
 - Phase 6: server-side shopping cart (Neon) with drawer and /cart page, live Add to cart, header cart badge; browser-saved wishlist with heart buttons, header count and /wishlist page; `handles` filter in the products API; cart and wishlist unit, integration, e2e and accessibility tests.
 
 - Phase 5: product detail page with gallery and enlarge dialog, price and discount block, variant and quantity controls, sold-out handling, trust badges, description, related products, breadcrumbs, SEO metadata and structured data; unit, integration, e2e and accessibility tests.

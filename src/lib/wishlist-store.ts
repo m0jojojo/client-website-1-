@@ -6,8 +6,12 @@
 const KEY = "bagru:wishlist:v1";
 export const MAX_WISHLIST = 200;
 
+/** Optional hook that mirrors changes to the signed-in customer's account (set by AccountSync). */
+export type WishlistRemote = { add(handle: string): void; remove(handle: string): void };
+
 const EMPTY: readonly string[] = Object.freeze([]);
 let cache: readonly string[] | null = null;
+let remote: WishlistRemote | null = null;
 const listeners = new Set<() => void>();
 
 function parse(raw: string | null): string[] {
@@ -69,16 +73,31 @@ export const wishlistStore = {
     if (i >= 0) {
       list.splice(i, 1);
       write(list);
+      remote?.remove(handle);
       return false;
     }
     write([handle, ...list].slice(0, MAX_WISHLIST));
+    remote?.add(handle);
     return true;
   },
   remove(handle: string) {
     write(read().filter((h) => h !== handle));
+    remote?.remove(handle);
+  },
+  /** Replace the whole list without notifying the remote (used when loading the account's list). */
+  replaceAll(handles: string[]) {
+    write([...new Set(handles)].slice(0, MAX_WISHLIST));
+  },
+  /** Forget everything locally (on sign-out, so the next person on a shared computer starts clean). */
+  clear() {
+    write([]);
+  },
+  setRemote(next: WishlistRemote | null) {
+    remote = next;
   },
   /** Test helper: forget the in-memory copy. */
   _reset() {
     cache = null;
+    remote = null;
   },
 };

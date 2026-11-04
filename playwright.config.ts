@@ -18,6 +18,15 @@ export default defineConfig({
     command: "npm run build && npm run start",
     url: "http://localhost:3000",
     reuseExistingServer: !process.env.CI,
+    env: {
+      // Placeholder Google credentials are enough to render the sign-in button and build the
+      // redirect URL; real Google sign-in cannot be automated.
+      GOOGLE_CLIENT_ID: process.env.GOOGLE_CLIENT_ID ?? "e2e-placeholder-client-id",
+      GOOGLE_CLIENT_SECRET: process.env.GOOGLE_CLIENT_SECRET ?? "e2e-placeholder-client-secret",
+      BETTER_AUTH_URL: "http://localhost:3000",
+      // Parallel test workers all share one IP and sign in often; see src/lib/auth-rate-limit.ts.
+      AUTH_RATE_LIMIT_DISABLED: "true",
+    },
     timeout: 180_000,
   },
 });

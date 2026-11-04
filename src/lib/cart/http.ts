@@ -1,9 +1,10 @@
 import { cookies } from "next/headers";
 import { NextResponse } from "next/server";
 import { ZodError } from "zod";
+import { getSessionUser } from "@/lib/auth-session";
 import { CART_COOKIE, CART_COOKIE_MAX_AGE } from "./constants";
 import { generateCartToken, hashCartToken, isPlausibleToken } from "./token";
-import { CartError, type CartErrorCode } from "./types";
+import { CartError, type CartErrorCode, type CartOwner } from "./types";
 
 const STATUS: Record<CartErrorCode, number> = {
   VARIANT_NOT_FOUND: 404,
@@ -31,6 +32,26 @@ export function isSameOrigin(request: Request): boolean {
   } catch {
     return false;
   }
+}
+
+/** Signed-in customers own their cart; otherwise it belongs to the cookie, if there is one. */
+export async function resolveOwnerForRead(): Promise<CartOwner | undefined> {
+  const user = await getSessionUser();
+  if (user) return { userId: user.id };
+  const tokenHash = await readTokenHash();
+  return tokenHash ? { tokenHash } : undefined;
+}
+
+/** Like resolveOwnerForRead, but starts an anonymous cart (and cookie) when there is none. */
+export async function resolveOwnerForWrite(): Promise<CartOwner> {
+  const user = await getSessionUser();
+  if (user) return { userId: user.id };
+  return { tokenHash: await tokenHashForWrite() };
+}
+
+/** Forget the anonymous cart cookie (used once its lines have been merged into an account). */
+export async function clearCartCookie() {
+  (await cookies()).delete(CART_COOKIE);
 }
 
 export async function readTokenHash(): Promise<string | undefined> {

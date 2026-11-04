@@ -25,6 +25,9 @@ export type CartView = {
   savingsPaise: number;
 };
 
+/** A cart belongs either to an anonymous browser (hashed cookie token) or to a signed-in customer. */
+export type CartOwner = { tokenHash: string } | { userId: string };
+
 export const EMPTY_CART: CartView = { lines: [], itemCount: 0, subtotalPaise: 0, savingsPaise: 0 };
 
 export type CartErrorCode = "VARIANT_NOT_FOUND" | "SOLD_OUT" | "CART_FULL" | "ITEM_NOT_FOUND";

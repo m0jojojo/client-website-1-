@@ -1,6 +1,6 @@
 import { z } from "zod";
 import { MAX_QUANTITY } from "@/lib/cart/constants";
-import { errorResponse, isSameOrigin, json, readJson, tokenHashForWrite } from "@/lib/cart/http";
+import { errorResponse, isSameOrigin, json, readJson, resolveOwnerForWrite } from "@/lib/cart/http";
 import { addItem, getCartView } from "@/lib/cart/service";
 
 const body = z.object({
@@ -12,9 +12,9 @@ export async function POST(request: Request) {
   if (!isSameOrigin(request)) return json({ error: "Forbidden" }, 403);
   try {
     const { variantId, quantity } = body.parse(await readJson(request));
-    const tokenHash = await tokenHashForWrite();
-    await addItem(tokenHash, variantId, quantity);
-    return json(await getCartView(tokenHash));
+    const owner = await resolveOwnerForWrite();
+    await addItem(owner, variantId, quantity);
+    return json(await getCartView(owner));
   } catch (err) {
     return errorResponse(err);
   }

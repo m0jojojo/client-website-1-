@@ -28,6 +28,10 @@ describe("PromoStrip", () => {
   });
 });
 
+vi.mock("@/lib/auth-client", () => ({
+  authClient: { useSession: () => ({ data: null, isPending: false }) },
+}));
+
 const renderHeader = () =>
   render(
     <CartProvider>

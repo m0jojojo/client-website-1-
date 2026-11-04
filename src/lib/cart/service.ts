@@ -1,15 +1,18 @@
 import { getDb } from "@/lib/db";
 import { PLACEHOLDER_IMAGE } from "@/lib/catalog/queries";
 import { MAX_CART_LINES, MAX_QUANTITY } from "./constants";
-import { CartError, EMPTY_CART, type CartLine, type CartView } from "./types";
+import { CartError, EMPTY_CART, type CartLine, type CartOwner, type CartView } from "./types";
 
 const clampQty = (n: number) => Math.min(MAX_QUANTITY, Math.max(1, Math.floor(n)));
 
+const cartWhere = (owner: CartOwner) =>
+  "userId" in owner ? { userId: owner.userId } : { tokenHash: owner.tokenHash };
+
 /** Builds the cart the shopper sees, always from current database prices. */
-export async function getCartView(tokenHash: string | undefined): Promise<CartView> {
-  if (!tokenHash) return EMPTY_CART;
+export async function getCartView(owner: CartOwner | undefined): Promise<CartView> {
+  if (!owner) return EMPTY_CART;
   const cart = await getDb().cart.findUnique({
-    where: { tokenHash },
+    where: cartWhere(owner),
     include: {
       items: {
         orderBy: { createdAt: "asc" },
@@ -61,11 +64,11 @@ export async function getCartView(tokenHash: string | undefined): Promise<CartVi
 }
 
 /** Finds or creates the cart for this token hash. */
-export async function ensureCart(tokenHash: string) {
-  return getDb().cart.upsert({ where: { tokenHash }, update: {}, create: { tokenHash } });
+export async function ensureCart(owner: CartOwner) {
+  return getDb().cart.upsert({ where: cartWhere(owner), update: {}, create: cartWhere(owner) });
 }
 
-export async function addItem(tokenHash: string, variantId: string, quantity: number) {
+export async function addItem(owner: CartOwner, variantId: string, quantity: number) {
   const db = getDb();
   const variant = await db.variant.findUnique({
     where: { id: variantId },
@@ -76,7 +79,7 @@ export async function addItem(tokenHash: string, variantId: string, quantity: nu
   }
   if (!variant.inStock) throw new CartError("SOLD_OUT", "Sorry, this item is sold out.");
 
-  const cart = await ensureCart(tokenHash);
+  const cart = await ensureCart(owner);
   const existing = await db.cartItem.findUnique({
     where: { cartId_variantId: { cartId: cart.id, variantId } },
   });
@@ -102,9 +105,9 @@ export async function addItem(tokenHash: string, variantId: string, quantity: nu
 }
 
 /** Sets a line's quantity; 0 removes it. The line must belong to this cart. */
-export async function setItemQuantity(tokenHash: string, itemId: string, quantity: number) {
+export async function setItemQuantity(owner: CartOwner, itemId: string, quantity: number) {
   const db = getDb();
-  const item = await db.cartItem.findFirst({ where: { id: itemId, cart: { tokenHash } } });
+  const item = await db.cartItem.findFirst({ where: { id: itemId, cart: cartWhere(owner) } });
   if (!item) throw new CartError("ITEM_NOT_FOUND", "That item is not in your cart.");
   if (quantity <= 0) {
     await db.cartItem.delete({ where: { id: item.id } });
@@ -114,8 +117,45 @@ export async function setItemQuantity(tokenHash: string, itemId: string, quantit
   await db.cart.update({ where: { id: item.cartId }, data: { updatedAt: new Date() } });
 }
 
-export async function removeItem(tokenHash: string, itemId: string) {
-  await setItemQuantity(tokenHash, itemId, 0);
+export async function removeItem(owner: CartOwner, itemId: string) {
+  await setItemQuantity(owner, itemId, 0);
+}
+
+/**
+ * Moves a guest cart's lines into the signed-in customer's cart (quantities add up, capped),
+ * then deletes the guest cart. Safe to run twice: each line leaves the guest cart as it is moved.
+ */
+export async function mergeGuestCartIntoUser(tokenHash: string, userId: string): Promise<void> {
+  const db = getDb();
+  const guest = await db.cart.findUnique({
+    where: { tokenHash },
+    include: { items: { orderBy: { createdAt: "asc" } } },
+  });
+  if (!guest) return;
+  if (guest.items.length > 0) {
+    const mine = await ensureCart({ userId });
+    for (const item of guest.items) {
+      const existing = await db.cartItem.findUnique({
+        where: { cartId_variantId: { cartId: mine.id, variantId: item.variantId } },
+      });
+      if (!existing) {
+        const lines = await db.cartItem.count({ where: { cartId: mine.id } });
+        if (lines >= MAX_CART_LINES) continue; // full: drop the rest rather than fail the login
+      }
+      await db.cartItem.upsert({
+        where: { cartId_variantId: { cartId: mine.id, variantId: item.variantId } },
+        create: { cartId: mine.id, variantId: item.variantId, quantity: clampQty(item.quantity) },
+        update: { quantity: { increment: item.quantity } },
+      });
+      await db.cartItem.updateMany({
+        where: { cartId: mine.id, variantId: item.variantId, quantity: { gt: MAX_QUANTITY } },
+        data: { quantity: MAX_QUANTITY },
+      });
+      await db.cartItem.delete({ where: { id: item.id } });
+    }
+    await db.cart.update({ where: { id: mine.id }, data: { updatedAt: new Date() } });
+  }
+  await db.cart.delete({ where: { id: guest.id } });
 }
 
 /** Test and housekeeping helper: delete carts by token hash. */
