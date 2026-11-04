@@ -1,5 +1,6 @@
 import type { Prisma } from "@/generated/prisma/client";
 import { getDb } from "@/lib/db";
+import { pickPrimaryCollection } from "./collections";
 import { discountPercent } from "./pricing";
 import type {
   Availability,
@@ -194,4 +195,50 @@ export async function listCollections(): Promise<CollectionSummary[]> {
 export async function getCollectionByHandle(handle: string) {
   const c = await getDb().collection.findUnique({ where: { handle } });
   return c ? { handle: c.handle, title: c.title } : null;
+}
+
+/**
+ * Other products from the product's most specific collection (in-stock first, newest first),
+ * topped up with the newest products if that collection is small.
+ */
+export async function getRelatedProducts(
+  handle: string,
+  limit = 8,
+): Promise<{ collection: { handle: string; title: string } | null; items: ProductSummary[] }> {
+  const db = getDb();
+  const current = await db.product.findFirst({
+    where: { handle, published: true },
+    include: { collections: { include: { collection: true } } },
+  });
+  if (!current) return { collection: null, items: [] };
+
+  const primary = pickPrimaryCollection(
+    current.collections.map((c) => ({ handle: c.collection.handle, title: c.collection.title })),
+  );
+  const include = { variants: true, images: true } as const;
+  const base: Prisma.ProductWhereInput = { published: true, id: { not: current.id } };
+
+  const same = primary
+    ? await db.product.findMany({
+        where: { ...base, collections: { some: { collection: { handle: primary.handle } } } },
+        include,
+        orderBy: orderByFor("featured"),
+        take: limit * 2,
+      })
+    : [];
+  let items = same.map(toSummary);
+  items.sort((a, b) => Number(b.inStock) - Number(a.inStock)); // stable: keeps newest-first within groups
+  items = items.slice(0, limit);
+
+  if (items.length < limit) {
+    const have = new Set([current.id, ...same.map((p) => p.id)]);
+    const extra = await db.product.findMany({
+      where: { published: true, id: { notIn: [...have] } },
+      include,
+      orderBy: orderByFor("featured"),
+      take: limit - items.length,
+    });
+    items = [...items, ...extra.map(toSummary)];
+  }
+  return { collection: primary, items };
 }

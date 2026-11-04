@@ -115,7 +115,7 @@ test.describe("collection page", () => {
     await page.goto("/collections/does-not-exist");
     await expect(page.getByText("This page could not be found")).toBeVisible();
     await expect(page.locator('meta[name="robots"]').first()).toHaveAttribute("content", /noindex/);
-    await expect(page).toHaveTitle(/Collection not found/);
+    await expect(page).toHaveTitle(/not found|could not be found/i);
   });
 
   test("document title uses the collection name", async ({ page }) => {

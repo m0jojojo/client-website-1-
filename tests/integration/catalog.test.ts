@@ -2,6 +2,7 @@ import { getDb } from "@/lib/db";
 import {
   getCollectionByHandle,
   getFacets,
+  getRelatedProducts,
   getProductByHandle,
   listCollections,
   listProducts,
@@ -157,6 +158,38 @@ describe.skipIf(!hasDb)("catalog queries (real database, seeded)", () => {
       const f = await getFacets({ q: "maheshwari" });
       const res = await listProducts({ q: "maheshwari", pageSize: 60 });
       expect(f.inStock + f.outOfStock).toBe(res.total);
+    });
+  });
+
+  describe("Phase 5: related products", () => {
+    it("returns up to the limit, never the product itself, mostly from its collection", async () => {
+      const { items } = await listProducts({ collection: "mulmul-sarees", pageSize: 5 });
+      const self = items[0].handle;
+      const rel = await getRelatedProducts(self, 8);
+      expect(rel.collection).not.toBeNull();
+      expect(rel.items.length).toBeGreaterThan(0);
+      expect(rel.items.length).toBeLessThanOrEqual(8);
+      expect(rel.items.map((i) => i.handle)).not.toContain(self);
+      expect(new Set(rel.items.map((i) => i.handle)).size).toBe(rel.items.length);
+    });
+
+    it("tops up from other products when the collection is small", async () => {
+      const { items } = await listProducts({ collection: "modal-silk-sarees", pageSize: 5 });
+      expect(items.length).toBe(1);
+      const rel = await getRelatedProducts(items[0].handle, 8);
+      expect(rel.items).toHaveLength(8);
+      expect(rel.items.map((i) => i.handle)).not.toContain(items[0].handle);
+    });
+
+    it("lists in-stock items before sold-out ones", async () => {
+      const { items } = await listProducts({ collection: "cotton-sarees", pageSize: 1 });
+      const rel = await getRelatedProducts(items[0].handle, 24);
+      const flags = rel.items.map((i) => i.inStock);
+      expect(flags).toEqual([...flags].sort((a, b) => Number(b) - Number(a)));
+    });
+
+    it("returns nothing for an unknown handle", async () => {
+      expect(await getRelatedProducts("does-not-exist")).toEqual({ collection: null, items: [] });
     });
   });
 });
